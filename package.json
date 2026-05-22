@@ -1,0 +1,25 @@
+{
+  "name": "backend1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+     "start": "dotenvx run -- node src/index.js",
+    "dev": "dotenvx run -- nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BikramModi/My-Portfolio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/BikramModi/My-Portfolio/issues"
+  },
+  "homepage": "https://github.com/BikramModi/My-Portfolio#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
