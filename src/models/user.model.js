@@ -17,8 +17,7 @@ const UserSchema = new Schema(
       lowercase: true,
       trim: true,
       validate: {
-        validator: (email) =>
-          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+        validator: (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
         message: "Invalid email address",
       },
     },

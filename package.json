@@ -4,9 +4,14 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "dotenvx run -- node src/index.js",
+    "start": "node src/index.js",
+    "startfornormalnot docker": "dotenvx run -- node src/index.js",
     "dev": "dotenvx run -- nodemon src/index.js",
-    "test": "dotenvx run --env-file=.env.test -- cross-env NODE_ENV=test jest --runInBand"
+    "docker:dev": "nodemon src/index.js",
+    "test": "dotenvx run --env-file=.env.test -- cross-env NODE_ENV=test jest --runInBand",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write"
   },
   "repository": {
     "type": "git",
@@ -39,11 +44,17 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.5",
+    "@eslint/js": "^10.0.1",
     "babel-jest": "^30.4.1",
     "cross-env": "^10.1.0",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.6.0",
     "jest": "^29.7.0",
     "mongodb-memory-server": "^11.1.0",
     "nodemon": "^3.1.14",
+    "prettier": "^3.8.3",
     "supertest": "^7.2.2"
   }
 }

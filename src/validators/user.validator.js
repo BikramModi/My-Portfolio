@@ -2,9 +2,7 @@ import { body } from "express-validator";
 import User from "../models/user.model.js";
 
 export const createUserValidator = [
-  body("name")
-    .notEmpty()
-    .withMessage("Name is required"),
+  body("name").notEmpty().withMessage("Name is required"),
 
   body("email")
     .notEmpty()
@@ -25,10 +23,7 @@ export const createUserValidator = [
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
 
-  body("phone")
-    .optional()
-    .isMobilePhone()
-    .withMessage("Invalid phone number"),
+  body("phone").optional().isMobilePhone().withMessage("Invalid phone number"),
 
   body("role")
     .optional()
@@ -40,7 +35,6 @@ export const createUserValidator = [
     .isIn(["active", "suspended", "deleted"])
     .withMessage("Invalid status"),
 ];
-
 
 export const updateUserValidator = [
   body("name").optional(),
@@ -67,10 +61,7 @@ export const updateUserValidator = [
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
 
-  body("phone")
-    .optional()
-    .isMobilePhone()
-    .withMessage("Invalid phone number"),
+  body("phone").optional().isMobilePhone().withMessage("Invalid phone number"),
 
   body("role")
     .optional()

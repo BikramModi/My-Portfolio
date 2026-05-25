@@ -1,17 +1,15 @@
 import User from "../models/user.model.js";
 import NotFoundError from "../errors/not-found-error.error.js";
 
-
 const createUser = async (userData) => {
   // Create the user
   const user = await User.create(userData);
 
   // Return user object without password
-  const { password, ...userWithoutPassword } = user.toObject();
+  const { password : _password, ...userWithoutPassword } = user.toObject();
 
   return userWithoutPassword;
 };
-
 
 const getAllUsers = async (query) => {
   const {
@@ -52,7 +50,7 @@ const getUserById = async (userId) => {
   if (!user) {
     throw new NotFoundError("User not found");
   }
-  const { password, ...userWithoutPassword } = user.toObject();
+  const { password  : _password, ...userWithoutPassword } = user.toObject();
   return userWithoutPassword;
 };
 
@@ -73,7 +71,7 @@ const updateUser = async (userId, userData) => {
   if (!user) {
     throw new NotFoundError("User not found");
   }
-  const { password, ...userWithoutPassword } = user.toObject();
+  const { password  : _password, ...userWithoutPassword } = user.toObject();
   return userWithoutPassword;
 };
 

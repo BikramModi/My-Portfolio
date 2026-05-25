@@ -10,8 +10,8 @@ class ValidationError extends Error {
           ? maybeErrors
           : []
         : Array.isArray(errorsOrMessage)
-        ? errorsOrMessage
-        : [];
+          ? errorsOrMessage
+          : [];
 
     super(message);
     this.name = "ValidationError";

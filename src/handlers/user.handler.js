@@ -14,8 +14,6 @@ import validationMiddleware from "../middlerwares/validation.middleware.js";
 
 const USER_ROUTER = Router();
 
-
-
 /**
  * @swagger
  * /users:
@@ -58,8 +56,6 @@ USER_ROUTER.post(
     }
   }
 );
-
-
 
 /**
  * @swagger
@@ -121,9 +117,6 @@ USER_ROUTER.get("/", async (req, res, next) => {
   }
 });
 
-
-
-
 /**
  * @swagger
  * /users/{id}:
@@ -168,10 +161,6 @@ USER_ROUTER.get("/:id", async (req, res, next) => {
     next(error);
   }
 });
-
-
-
-
 
 /**
  * @swagger
@@ -246,9 +235,6 @@ USER_ROUTER.patch(
     }
   }
 );
-
-
-
 
 /**
  * @swagger

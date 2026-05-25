@@ -5,8 +5,6 @@ import NotFoundError from "../errors/not-found-error.error.js";
 import UnauthorizedError from "../errors/unauthorized.error.js";
 import { compare } from "bcrypt";
 
-
-
 export const register = async (userData) => {
   const user = await createUser(userData);
 
@@ -22,21 +20,14 @@ export const register = async (userData) => {
   return { user, token };
 };
 
-
-
-
 export const login = async (userData) => {
-
   const user = await User.findOne({ email: userData.email });
 
   if (!user) {
     throw new NotFoundError("This email is not registered.");
   }
 
-  const isPasswordValid = await compare(
-    userData.password,
-    user.password
-  );
+  const isPasswordValid = await compare(userData.password, user.password);
 
   if (!isPasswordValid) {
     throw new UnauthorizedError("Invalid credentials");
@@ -60,7 +51,7 @@ export const login = async (userData) => {
     { expiresIn: "7d" }
   );
 
-  const { password, ...userWithoutPassword } = user.toObject();
+  const { password  : _password, ...userWithoutPassword } = user.toObject();
 
   return {
     user: userWithoutPassword,
@@ -68,5 +59,3 @@ export const login = async (userData) => {
     refreshToken,
   };
 };
-
-

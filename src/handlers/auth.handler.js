@@ -7,15 +7,7 @@ import { loginValidator } from "../validators/auth.validator.js";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 
-
 const AUTH_ROUTER = Router();
-
-
-
-
-
-
-
 
 /**
  * @swagger
@@ -53,15 +45,11 @@ AUTH_ROUTER.post(
       });
 
       return res.status(201).json({ user });
-
     } catch (error) {
       next(error);
     }
   }
 );
-
-
-
 
 /**
  * @swagger
@@ -84,43 +72,31 @@ AUTH_ROUTER.post(
   "/login",
   validationMiddleware(loginValidator),
   async (req, res, next) => {
-
     try {
-
       const result = await login(req.body);
 
       res.cookie("accessToken", result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite:
-          process.env.NODE_ENV === "production"
-            ? "none"
-            : "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1000 * 60 * 60 * 3,
       });
 
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite:
-          process.env.NODE_ENV === "production"
-            ? "none"
-            : "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1000 * 60 * 60 * 24 * 7,
       });
 
       return res.status(200).json({
         user: result.user,
       });
-
     } catch (error) {
       next(error);
     }
-
   }
 );
-
-
 
 /**
  * @swagger
@@ -152,20 +128,17 @@ AUTH_ROUTER.post(
 
 AUTH_ROUTER.post("/logout", async (req, res) => {
   try {
-    const { refreshToken } = req.cookies;
+    const { refreshToken : _refreshToken } = req.cookies;
 
     // 4️⃣ Clear cookies
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
 
     return res.status(200).json({ message: "Logged out" });
-
-  } catch (error) {
+  } catch (_error) {
     return res.status(500).json({ message: "Logout failed" });
   }
 });
-
-
 
 /**
  * @swagger
@@ -198,13 +171,10 @@ AUTH_ROUTER.get("/me", async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const user = await User.findById(decoded.userId).select("-password");
     res.json({ user });
-  } catch (err) {
+  } catch (_err) {
     res.status(401).json({ message: "Unauthorized" });
   }
 });
-
-
-
 
 /**
  * @swagger
@@ -244,10 +214,7 @@ AUTH_ROUTER.post("/refresh", async (req, res) => {
     }
 
     // Verify refresh token
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_SECRET
-    );
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
 
     // Create new access token
     const newAccessToken = jwt.sign(
@@ -296,8 +263,5 @@ AUTH_ROUTER.post("/refresh", async (req, res) => {
     });
   }
 });
-
-
-
 
 export default AUTH_ROUTER;
