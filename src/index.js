@@ -1,12 +1,12 @@
-import express from "express";
+
+
+import SERVER from "./server.js";
 import connectDB from "./config/database.js";
-
-const SERVER = express();
-
-connectDB();
 
 
 const PORT = process.env.PORT;
+
+connectDB();
 
 
 SERVER.listen(PORT, () => {

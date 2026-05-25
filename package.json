@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "dotenvx run -- node src/index.js",
-    "dev": "dotenvx run -- nodemon src/index.js"
+    "dev": "dotenvx run -- nodemon src/index.js",
+    "test": "dotenvx run --env-file=.env.test -- cross-env NODE_ENV=test jest --runInBand"
   },
   "repository": {
     "type": "git",
@@ -20,8 +21,29 @@
   },
   "homepage": "https://github.com/BikramModi/My-Portfolio#readme",
   "dependencies": {
+    "axios": "^1.16.1",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
     "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.2.0",
-    "mongoose": "^9.6.2"
+    "mongoose": "^9.6.2",
+    "multer": "^2.1.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.5",
+    "babel-jest": "^30.4.1",
+    "cross-env": "^10.1.0",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^11.1.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }
