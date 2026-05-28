@@ -16,6 +16,8 @@
 
 services:
   backend:
+    image: backend2-app
+
     build:
       context: .
       dockerfile: Dockerfile.dev
