@@ -68,11 +68,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-         docker build \
-          -f ./backend1/Dockerfile \
+          docker build \
+          -f ./backend1/Dockerfile.prod \
           -t ${{ secrets.DOCKER_USERNAME }}/test4:latest \
           ./backend1
 
       - name: Push Docker image
         run: |
-         docker push ${{ secrets.DOCKER_USERNAME }}/test4:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/test4:latest
