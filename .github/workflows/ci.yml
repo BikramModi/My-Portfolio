@@ -53,8 +53,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
 
-    # if: github.ref == 'refs/heads/main'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,12 +67,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-       run: |
-    docker build \
-      -f ./backend1/Dockerfile \
-      -t ${{ secrets.DOCKER_USERNAME }}/test4:latest \
-      ./backend1
+        run: |
+         docker build \
+          -f ./backend1/Dockerfile \
+          -t ${{ secrets.DOCKER_USERNAME }}/test4:latest \
+          ./backend1
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/test4:latest
+         docker push ${{ secrets.DOCKER_USERNAME }}/test4:latest
