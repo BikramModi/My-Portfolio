@@ -70,7 +70,7 @@ jobs:
           docker build \
             -f /backend1/Dockerfile.prod \
             -t ${{ secrets.DOCKER_USERNAME }}/test4:latest \
-            /backend1
+            ./backend1
 
       - name: Push Docker image
         run: |
