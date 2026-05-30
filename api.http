@@ -1,0 +1,275 @@
+@baseUrl = http://localhost:3001
+@userId = 69abcf126a23db22a37e4cea
+@tokenaccess = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc3OTU5NzgzMywiZXhwIjoxNzc5NjA4NjMzfQ.9ifNOb3inflYB0L1eZxRjYBuqd-pl3jltaPu4kyHhgM
+@tokenrefresh = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc3OTU5NzgzMywiZXhwIjoxNzgwMjAyNjMzfQ.5--FlQZkXs4dfW-jCXVowSdZQVUsw0ekFMQXf0s3YG4
+### USER API-----------------------------------------------------------------
+
+
+### Create a new user
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "name": "test1",
+  "email": "test1@example.com",
+  "password": "test1"
+}
+
+### Get all users
+GET {{baseUrl}}/users
+Cookie: accessToken={{tokenaccess}}; refreshToken={{tokenrefresh}}
+
+### Get a user by id
+GET {{baseUrl}}/users/{{userId}}
+Cookie: accessToken={{tokenaccess}}
+### Update a user by id
+PATCH {{baseUrl}}/users/{{userId}}
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "role": "admin"
+}
+
+### Delete a user by id
+DELETE {{baseUrl}}/users/{{userId}}
+Cookie: accessToken={{tokenaccess}}
+
+
+
+### AUTH API-----------------------------------------------------------------
+
+
+
+### Register a new user
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "testing2",
+  "email": "test2@gmail.com",
+  "password": "passwordtest2",
+  "phone": "9876543211",
+  "role": "user"
+}
+
+### Login a user
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test1@gmail.com",
+  "password": "passwordtest1"
+}
+
+### Logout a user
+POST {{baseUrl}}/auth/logout
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+### Refresh access token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}; refreshToken={{tokenrefresh}}
+
+### Get current user profile
+GET {{baseUrl}}/auth/me
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}; refreshToken={{tokenrefresh}}
+
+
+### USER PREFERENCE API-----------------------------------------------------------------
+
+### Get user preferences
+GET {{baseUrl}}/preferences/get
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+### Update user preferences
+PATCH {{baseUrl}}/preferences/update
+Content-Type: application/json
+Cookie: accessToken={{{{tokenaccess}}}}
+
+{
+  "defaultModel": "gpt-3.5-turbo",
+  "temperature": "0.7",
+  "theme": "light"
+}
+
+
+
+
+### CONVERSATION API-----------------------------------------------------------------
+
+@convId=69aad2036a23db22a37e2f67
+
+### Create a new conversation
+POST {{baseUrl}}/conversations
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "title": "My Third Conversation",
+  "model": "gpt-3.5-turbo",
+  "systemPrompt": "You are a helpful assistant.",
+  "visibility": "private",
+  "isArchived": "false"
+}
+
+
+### Create a new conversation for guest user
+POST {{baseUrl}}/conversations/guest
+Content-Type: application/json
+
+{
+  "title": "My fourth Conversation",
+  "model": "gpt-3.5-turbo",
+  "systemPrompt": "You are a helpful assistant.",
+  "visibility": "private",
+  "isArchived": "false"
+}
+
+
+### Get all conversations for the authenticated user
+GET {{baseUrl}}/conversations
+Cookie: accessToken={{tokenaccess}}
+
+
+
+### Get a single conversation by ID
+GET {{baseUrl}}/conversations/{{convId}}
+Cookie: accessToken={{tokenaccess}}
+
+### Update a conversation by ID
+PATCH {{baseUrl}}/conversations/{{convId}}
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "title": "Updated first Conversation Title",
+  "model": "gpt-4",
+  "systemPrompt": "You are an updated helpful assistant.",
+  "visibility": "shared",
+  "isArchived": "false"
+}
+
+### Delete a conversation by ID
+DELETE {{baseUrl}}/conversations/{{convId}}
+Cookie: accessToken={{tokenaccess}}
+
+
+
+
+
+### MESSAGE API-----------------------------------------------------------------
+
+@messageId=69aad22e6a23db22a37e2fbb
+### Add a message to a conversation
+POST {{baseUrl}}/messages/conversations/{{convId}}/messages
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "content": "testing make it simple "
+}
+
+
+### Add a message to a conversation by guest user for free
+POST {{baseUrl}}/messages/conversations/{{convId}}/messages/guest
+Content-Type: application/json
+
+{
+  "content": "explain in detail"
+}
+
+### Get all messages in a conversation
+GET {{baseUrl}}/messages/conversations/{{convId}}/messages
+Cookie: accessToken={{tokenaccess}}
+
+### Update a message in a conversation
+PATCH {{baseUrl}}/messages/messages/{{messageId}}
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "content": "can you write mern code?"
+}
+
+### Regenerate an assistant message in a conversation
+POST {{baseUrl}}/messages/messages/{{messageId}}/regenerate
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "conversationId": "{{convId}}"
+}
+
+
+
+
+### MESSAGE VERSION API-----------------------------------------------------------------
+
+@messageVersionId=69aad22e6a23db22a37e2fbb
+@conversationId=69aad2036a23db22a37e2f67
+
+### Get all versions of a message
+GET {{baseUrl}}/messagesvr/{{conversationId}}/{{messageVersionId}}/versions
+
+
+
+### CONTENT FLAG API-----------------------------------------------------------------
+
+@flagId=6998327f5ecb1b98a950e86c
+
+
+
+### Flag a message for review automatic system generated
+POST {{baseUrl}}/flags
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "messageId": "{{messageId}}",
+  "category": "hate",
+  "severity": "high"
+}
+
+
+
+### Get all flagged messages (Admin only)
+GET {{baseUrl}}/flags
+Cookie: accessToken={{tokenaccess}}
+
+### Update the action taken on a flagged message (Admin only)
+PATCH {{baseUrl}}/flags/{{flagId}}
+Content-Type: application/json
+Cookie: accessToken={{tokenaccess}}
+
+{
+  "actionTaken": "blocked"
+}
+
+
+
+
+
+
+### USAGE METRIC API-----------------------------------------------------------------
+
+### Get usage metrics for the authenticated user
+GET {{baseUrl}}/metrics/usage
+Cookie: accessToken={{tokenaccess}}
+
+### Get usage metrics for all users (Admin only)
+GET {{baseUrl}}/metrics/usage/all
+Cookie: accessToken={{tokenaccess}}
+
+
+
+
+
+
+
+
+
+### ---------------------------THE END-----------------------------------------------------------------
