@@ -6,3 +6,7 @@ build/node_modules/
 
 *.pem
 ssl/
+
+
+certs/
+k8s/secret.yaml
