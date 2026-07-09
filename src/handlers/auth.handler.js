@@ -35,16 +35,14 @@ AUTH_ROUTER.post(
   validationMiddleware(createUserValidator),
   async (req, res, next) => {
     try {
-      const { user, token } = await register(req.body);
+      const { user} = await register(req.body);
 
-      res.cookie("accessToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 1000 * 60 * 60 * 3,
-      });
+     
 
-      return res.status(201).json({ user });
+     return res.status(201).json({
+    message: "Registration successful",
+    user,
+});
     } catch (error) {
       next(error);
     }
