@@ -35,16 +35,14 @@ AUTH_ROUTER.post(
   validationMiddleware(createUserValidator),
   async (req, res, next) => {
     try {
-      const { user, token } = await register(req.body);
+      const { user} = await register(req.body);
 
-      res.cookie("accessToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 1000 * 60 * 60 * 3,
-      });
+     
 
-      return res.status(201).json({ user });
+     return res.status(201).json({
+    message: "Registration successful",
+    user,
+});
     } catch (error) {
       next(error);
     }
@@ -80,6 +78,10 @@ AUTH_ROUTER.post(
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1000 * 60 * 60 * 3,
+        domain:
+          process.env.NODE_ENV === "production"
+            ? ".bikrammodi.com"
+            : undefined,
       });
 
       res.cookie("refreshToken", result.refreshToken, {
@@ -87,6 +89,10 @@ AUTH_ROUTER.post(
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1000 * 60 * 60 * 24 * 7,
+        domain:
+          process.env.NODE_ENV === "production"
+            ? ".bikrammodi.com"
+            : undefined,
       });
 
       return res.status(200).json({
@@ -128,15 +134,37 @@ AUTH_ROUTER.post(
 
 AUTH_ROUTER.post("/logout", async (req, res) => {
   try {
-    const { refreshToken : _refreshToken } = req.cookies;
+    const { refreshToken: _refreshToken } = req.cookies;
 
-    // 4️⃣ Clear cookies
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".bikrammodi.com"
+          : undefined,
+      path: "/",
+    });
 
-    return res.status(200).json({ message: "Logged out" });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".bikrammodi.com"
+          : undefined,
+      path: "/",
+    });
+
+    return res.status(200).json({
+      message: "Logged out",
+    });
   } catch (_error) {
-    return res.status(500).json({ message: "Logout failed" });
+    return res.status(500).json({
+      message: "Logout failed",
+    });
   }
 });
 
@@ -240,16 +268,24 @@ AUTH_ROUTER.post("/refresh", async (req, res) => {
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 3, // 3 hours
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 3,
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".bikrammodi.com"
+          : undefined,
     });
 
     // Set new refresh token cookie
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      domain:
+        process.env.NODE_ENV === "production"
+          ? ".bikrammodi.com"
+          : undefined,
     });
 
     return res.json({

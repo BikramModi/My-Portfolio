@@ -8,16 +8,8 @@ import { compare } from "bcrypt";
 export const register = async (userData) => {
   const user = await createUser(userData);
 
-  const token = jwt.sign(
-    {
-      userId: user._id.toString(),
-      role: user.role,
-    },
-    process.env.JWT_SECRET_KEY,
-    { expiresIn: "3h" }
-  );
 
-  return { user, token };
+  return { user };
 };
 
 export const login = async (userData) => {
