@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: backend-ingress
+
+spec:
+  ingressClassName: nginx
+
+  tls:
+    - hosts:
+        - api.local
+
+      secretName: backend-tls
+
+  rules:
+    - host: api.local
+
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+
+            backend:
+              service:
+                name: backend-service
+
+                port:
+                  number: 80
