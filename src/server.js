@@ -11,6 +11,8 @@ import swaggerSpec from "./config/swagger.js";
 
 const SERVER = express();
 
+SERVER.set("trust proxy", 1);
+
 if (process.env.NODE_ENV !== "test") {
   SERVER.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
