@@ -78,6 +78,7 @@ AUTH_ROUTER.post(
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1000 * 60 * 60 * 3,
+        domain: ".bikrammodi.com",
       });
 
       res.cookie("refreshToken", result.refreshToken, {
@@ -85,6 +86,7 @@ AUTH_ROUTER.post(
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 1000 * 60 * 60 * 24 * 7,
+        domain: ".bikrammodi.com",
       });
 
       return res.status(200).json({
