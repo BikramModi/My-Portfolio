@@ -5,6 +5,9 @@ const publicRoutes = [
   "/auth/register",
   "/auth/refresh",
   "/auth/logout",
+  "/ai/health",
+  "/ai/models",
+  "/ai/chat",
 ];
 
 export const authMiddleware = async (req, res, next) => {
