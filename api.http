@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3001
 @userId = 69abcf126a23db22a37e4cea
-@tokenaccess = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc3OTU5NzgzMywiZXhwIjoxNzc5NjA4NjMzfQ.9ifNOb3inflYB0L1eZxRjYBuqd-pl3jltaPu4kyHhgM
-@tokenrefresh = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc3OTU5NzgzMywiZXhwIjoxNzgwMjAyNjMzfQ.5--FlQZkXs4dfW-jCXVowSdZQVUsw0ekFMQXf0s3YG4
+@tokenaccess = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDY5MTg0NCwiZXhwIjoxNzg0NzAyNjQ0fQ.lNPy41cuOkTzh0DbxBXsYCIwX00oUk-8R9kWuBjrYmo
+@tokenrefresh = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDY5MTg0NCwiZXhwIjoxNzg1Mjk2NjQ0fQ.d9TiBK1EM74O9W152O8kEfoAeSA11sdubNQw3_t51xg
 ### USER API-----------------------------------------------------------------
 
 
@@ -76,6 +76,182 @@ Cookie: accessToken={{tokenaccess}}; refreshToken={{tokenrefresh}}
 GET {{baseUrl}}/auth/me
 Content-Type: application/json
 Cookie: accessToken={{tokenaccess}}; refreshToken={{tokenrefresh}}
+
+
+
+
+
+
+###############################################################
+# AI Module
+# Base URL
+###############################################################
+
+
+###############################################################
+# Health Check
+###############################################################
+
+GET {{baseUrl}}/ai/health
+Accept: application/json
+
+###
+
+###############################################################
+# List Installed Ollama Models
+###############################################################
+
+GET {{baseUrl}}/ai/models
+Accept: application/json
+
+###
+
+###############################################################
+# Gemma 3 1B
+###############################################################
+
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+    "model": "gemma3:1b",
+    "prompt": "Introduce yourself in one paragraph."
+}
+
+###
+
+###############################################################
+# Phi-3
+###############################################################
+
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+    "model": "phi3:latest",
+    "prompt": "Explain what React Context API is."
+}
+
+###
+
+###############################################################
+# Qwen 2.5 Coder
+###############################################################
+
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+    "model": "qwen2.5-coder:1.5b",
+    "prompt": "Write a Node.js Express hello world server."
+}
+
+###
+
+###############################################################
+# JavaScript Question
+###############################################################
+
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+    "model": "qwen2.5-coder:1.5b",
+    "prompt": "Explain closures in JavaScript."
+}
+
+###
+
+###############################################################
+# React Question
+###############################################################
+
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+    "model": "gemma3:1b",
+    "prompt": "What are React Hooks?"
+}
+
+###
+
+###############################################################
+# Node.js Question
+###############################################################
+
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+    "model": "phi3:latest",
+    "prompt": "Explain middleware in Express."
+}
+
+###
+
+###############################################################
+# MongoDB Question
+###############################################################
+
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+    "model": "gemma3:1b",
+    "prompt": "Explain MongoDB Aggregation Pipeline."
+}
+
+###
+
+###############################################################
+# Docker Question
+###############################################################
+
+POST {{baseUrl}}/chat
+Content-Type: application/json
+
+{
+    "model": "qwen2.5-coder:1.5b",
+    "prompt": "Explain Docker Compose."
+}
+
+###
+
+###############################################################
+# AI Test
+###############################################################
+
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+    "model": "gemma3:1b",
+    "prompt": "What is Artificial Intelligence?"
+}
+
+###
+
+###############################################################
+# Custom Prompt Template
+###############################################################
+
+POST {{baseUrl}}/ai/chat
+Content-Type: application/json
+
+{
+    "model": "phi3:latest",
+    "prompt": "YOUR CUSTOM PROMPT HERE"
+}
+
+
+
+
+
+
+
+
+
 
 
 ### USER PREFERENCE API-----------------------------------------------------------------
