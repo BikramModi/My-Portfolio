@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3001
 @userId = 69abcf126a23db22a37e4cea
-@tokenaccess = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDY5MTg0NCwiZXhwIjoxNzg0NzAyNjQ0fQ.lNPy41cuOkTzh0DbxBXsYCIwX00oUk-8R9kWuBjrYmo
-@tokenrefresh = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTEyODFlMTYxZWVmOTlmNDRjNDQ3NGYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDY5MTg0NCwiZXhwIjoxNzg1Mjk2NjQ0fQ.d9TiBK1EM74O9W152O8kEfoAeSA11sdubNQw3_t51xg
+@tokenaccess = 
+@tokenrefresh = 
 ### USER API-----------------------------------------------------------------
 
 
