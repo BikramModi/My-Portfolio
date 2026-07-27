@@ -7,7 +7,11 @@
     "start": "node src/index.js",
     "startfornormalnot docker": "dotenvx run -- node src/index.js",
     "dev": "dotenvx run -- nodemon src/index.js",
-    "docker:dev": "nodemon src/index.js",
+
+    "dev:container": "nodemon src/index.js",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up --build",
+    "docker:down": "docker compose -f docker-compose.dev.yml down",
+    
     "test": "dotenvx run --env-file=.env.test -- cross-env NODE_ENV=test jest --runInBand",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -35,9 +39,11 @@
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
+    "mailtrap": "^4.8.0",
     "mongodb": "^7.2.0",
     "mongoose": "^9.6.2",
     "multer": "^2.1.1",
+    "nodemailer": "^9.0.3",
     "redis": "^6.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
