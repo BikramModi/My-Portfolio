@@ -2,8 +2,21 @@ import Router from "express";
 import validationMiddleware from "../middlerwares/validation.middleware.js";
 import { register, login, verifyEmail } from "../services/auth.service.js";
 import { createUserValidator } from "../validators/user.validator.js";
-import { loginValidator, verifyEmailValidator, resendOTPValidator } from "../validators/auth.validator.js";
-import { resendOTP } from "../services/auth.service.js";
+import { loginValidator, 
+  verifyEmailValidator, 
+  resendOTPValidator, 
+  forgotPasswordValidator,
+  verifyResetOTPValidator,
+  resetPasswordValidator
+
+ } from "../validators/auth.validator.js";
+import { resendOTP, 
+  forgotPassword, 
+  verifyResetOTP,
+  resetPassword
+
+
+} from "../services/auth.service.js";
 
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
@@ -83,6 +96,58 @@ AUTH_ROUTER.post(
   }
 );
 
+AUTH_ROUTER.post(
+  "/forgot-password",
+  validationMiddleware(
+    forgotPasswordValidator
+  ),
+  async (req, res, next) => {
+    try {
+      const result =
+        await forgotPassword(req.body);
+
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+AUTH_ROUTER.post(
+  "/verify-reset-otp",
+  validationMiddleware(
+    verifyResetOTPValidator
+  ),
+  async (req, res, next) => {
+    try {
+      const result =
+        await verifyResetOTP(req.body);
+
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+AUTH_ROUTER.post(
+  "/reset-password",
+  validationMiddleware(
+    resetPasswordValidator
+  ),
+  async (req, res, next) => {
+    try {
+      const result =
+        await resetPassword(req.body);
+
+      return res.status(200).json(
+        result
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 
 /**

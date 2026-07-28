@@ -47,7 +47,7 @@ Content-Type: application/json
 
 {
   "name": "testing1",
-  "email": "appmyfirst67@gmail.com",
+  "email": "tophits2031@gmail.com",
   "password": "passwordtest2",
   "phone": "9876543211",
   "role": "user"
@@ -71,15 +71,41 @@ Content-Type: application/json
   "email": "appmyfirst67@gmail.com"
 }
 
+### Forgot password for a user
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
 
+{
+  "email": "bikrammodi132@gmail.com"
+}
+
+### verify OTP for password reset
+POST {{baseUrl}}/auth/verify-reset-otp
+Content-Type: application/json
+
+{
+  "email": "bikrammodi132@gmail.com",
+  "otp": "287878"
+}
+
+
+### Reset password for a user
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+    "resetToken":"6d84a7f33fd5c3a6c5fc995f722b2af89a41b9ab1148762b77024c905b2fd7b4",
+    "password":"NewPassword123",
+    "confirmPassword":"NewPassword123"
+}
 
 ### Login a user
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "test1@gmail.com",
-  "password": "passwordtest1"
+  "email": "bikrammodi132@gmail.com",
+  "password": "NewPassword123"
 }
 
 ### Logout a user

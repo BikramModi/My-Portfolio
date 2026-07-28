@@ -69,6 +69,61 @@ export const resendOTPValidator = [
     .normalizeEmail(),
 ];
 
+
+
+export const forgotPasswordValidator = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required.")
+    .bail()
+    .isEmail()
+    .withMessage("Please provide a valid email address.")
+    .normalizeEmail(),
+];
+
+export const verifyResetOTPValidator = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .isEmail(),
+
+  body("otp")
+    .trim()
+    .notEmpty()
+    .isLength({ min: 6, max: 6 })
+    .isNumeric(),
+];
+
+
+export const resetPasswordValidator = [
+  body("resetToken")
+    .trim()
+    .notEmpty()
+    .withMessage("Reset token is required."),
+
+  body("password")
+    .trim()
+    .notEmpty()
+    .withMessage("Password is required.")
+    .bail()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long."),
+
+  body("confirmPassword")
+    .trim()
+    .notEmpty()
+    .withMessage("Confirm password is required.")
+    .custom((value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error(
+          "Passwords do not match."
+        );
+      }
+      return true;
+    }),
+];
+
 export const loginValidator = [
   body("email")
     .trim()
