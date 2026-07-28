@@ -17,13 +17,13 @@ async function hashOTP(otp) {
 export async function storePendingRegistration(userData) {
   const otp = generateOTP();
 
-  const hashedOTP = await hashOTP(otp);
+  const otpHash = await hashOTP(otp);
 
   const key = `register:${userData.email}`;
 
   const value = {
-    ...userData,
-    otp: hashedOTP,
+    user: userData,
+    otpHash,
   };
 
   await redisClient.set(

@@ -39,6 +39,25 @@ export const registerValidator = [
   body("phone").optional().isMobilePhone().withMessage("Invalid phone number"),
 ];
 
+export const verifyEmailValidator = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Invalid email")
+    .normalizeEmail(),
+
+  body("otp")
+    .trim()
+    .notEmpty()
+    .withMessage("OTP is required")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("OTP must be exactly 6 digits")
+    .isNumeric()
+    .withMessage("OTP must contain only numbers"),
+];
+
 export const loginValidator = [
   body("email")
     .trim()

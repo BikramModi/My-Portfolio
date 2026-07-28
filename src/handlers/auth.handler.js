@@ -1,8 +1,8 @@
 import Router from "express";
 import validationMiddleware from "../middlerwares/validation.middleware.js";
-import { register, login } from "../services/auth.service.js";
+import { register, login, verifyEmail } from "../services/auth.service.js";
 import { createUserValidator } from "../validators/user.validator.js";
-import { loginValidator } from "../validators/auth.validator.js";
+import { loginValidator, verifyEmailValidator } from "../validators/auth.validator.js";
 
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
@@ -40,14 +40,32 @@ AUTH_ROUTER.post(
      
 
      return res.status(201).json({
-    message: "Registration successful",
-    user,
+    message: "Verification code sent to your email.",
 });
     } catch (error) {
       next(error);
     }
   }
 );
+
+
+
+
+AUTH_ROUTER.post(
+  "/verify-email",
+  validationMiddleware(verifyEmailValidator),
+  async (req, res, next) => {
+    try {
+      const result = await verifyEmail(req.body);
+
+      return res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+
 
 /**
  * @swagger
