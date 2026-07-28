@@ -53,6 +53,15 @@ Content-Type: application/json
   "role": "user"
 }
 
+### Verify email for a user
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "bikrammodi132@gmail.com",
+  "otp": "578852"
+}
+
 ### Login a user
 POST {{baseUrl}}/auth/login
 Content-Type: application/json

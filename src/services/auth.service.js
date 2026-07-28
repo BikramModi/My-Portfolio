@@ -9,6 +9,8 @@ import UnauthorizedError from "../errors/unauthorized.error.js";
 import ConflictError from "../errors/conflict.error.js";
 
 import { compare } from "bcrypt";
+import redisClient from "../config/redis.js";
+import { createUser } from "./user.service.js";
 
 export const register = async (userData) => {
   // Check if the email is already registered
@@ -28,6 +30,44 @@ export const register = async (userData) => {
 
   return {
     message: "Verification code sent to your email.",
+  };
+};
+
+export const verifyEmail = async ({ email, otp }) => {
+  const key = `register:${email}`;
+
+  // Find pending registration
+  const pendingRegistration = await redisClient.get(key);
+
+  if (!pendingRegistration) {
+    throw new NotFoundError(
+      "Verification code has expired or registration was not found."
+    );
+  }
+
+  const data = JSON.parse(pendingRegistration);
+
+  // Compare OTP
+  const isValidOTP = await compare(
+    otp,
+    data.otpHash
+  );
+
+  if (!isValidOTP) {
+    throw new UnauthorizedError(
+      "Invalid verification code."
+    );
+  }
+
+  // Create user
+  const user = await createUser(data.user);
+
+  // Delete Redis key
+  await redisClient.del(key);
+
+  return {
+    message: "Email verified successfully.",
+    user,
   };
 };
 
