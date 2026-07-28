@@ -47,7 +47,7 @@ Content-Type: application/json
 
 {
   "name": "testing1",
-  "email": "bikrammodi132@gmail.com",
+  "email": "appmyfirst67@gmail.com",
   "password": "passwordtest2",
   "phone": "9876543211",
   "role": "user"
@@ -58,9 +58,20 @@ POST {{baseUrl}}/auth/verify-email
 Content-Type: application/json
 
 {
-  "email": "bikrammodi132@gmail.com",
-  "otp": "578852"
+  "email": "appmyfirst67@gmail.com",
+  "otp": "228478"
 }
+
+
+### Resend OTP for email verification
+POST {{baseUrl}}/auth/resend-otp
+Content-Type: application/json
+
+{
+  "email": "appmyfirst67@gmail.com"
+}
+
+
 
 ### Login a user
 POST {{baseUrl}}/auth/login

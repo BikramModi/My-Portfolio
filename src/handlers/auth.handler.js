@@ -2,7 +2,8 @@ import Router from "express";
 import validationMiddleware from "../middlerwares/validation.middleware.js";
 import { register, login, verifyEmail } from "../services/auth.service.js";
 import { createUserValidator } from "../validators/user.validator.js";
-import { loginValidator, verifyEmailValidator } from "../validators/auth.validator.js";
+import { loginValidator, verifyEmailValidator, resendOTPValidator } from "../validators/auth.validator.js";
+import { resendOTP } from "../services/auth.service.js";
 
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
@@ -59,6 +60,23 @@ AUTH_ROUTER.post(
       const result = await verifyEmail(req.body);
 
       return res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+AUTH_ROUTER.post(
+  "/resend-otp",
+  validationMiddleware(
+    resendOTPValidator
+  ),
+  async (req, res, next) => {
+    try {
+      const result =
+        await resendOTP(req.body);
+
+      return res.status(200).json(result);
     } catch (error) {
       next(error);
     }
