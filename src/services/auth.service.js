@@ -1,4 +1,9 @@
-import { storePendingRegistration } from "./otp.service.js";
+import {
+  storePendingRegistration,
+  verifyPendingRegistration,
+  deletePendingRegistration,
+  resendPendingRegistrationOTP,
+} from "./otp.service.js";
 
 import User from "../models/user.model.js";
 
@@ -33,42 +38,33 @@ export const register = async (userData) => {
   };
 };
 
-export const verifyEmail = async ({ email, otp }) => {
-  const key = `register:${email}`;
-
-  // Find pending registration
-  const pendingRegistration = await redisClient.get(key);
-
-  if (!pendingRegistration) {
-    throw new NotFoundError(
-      "Verification code has expired or registration was not found."
+export const verifyEmail = async ({
+  email,
+  otp,
+}) => {
+  const userData =
+    await verifyPendingRegistration(
+      email,
+      otp
     );
-  }
 
-  const data = JSON.parse(pendingRegistration);
+  const user = await createUser(userData);
 
-  // Compare OTP
-  const isValidOTP = await compare(
-    otp,
-    data.otpHash
-  );
-
-  if (!isValidOTP) {
-    throw new UnauthorizedError(
-      "Invalid verification code."
-    );
-  }
-
-  // Create user
-  const user = await createUser(data.user);
-
-  // Delete Redis key
-  await redisClient.del(key);
+  await deletePendingRegistration(email);
 
   return {
-    message: "Email verified successfully.",
+    message:
+      "Email verified successfully.",
     user,
   };
+};
+
+export const resendOTP = async ({
+  email,
+}) => {
+  return await resendPendingRegistrationOTP(
+    email
+  );
 };
 
 export const login = async (userData) => {
