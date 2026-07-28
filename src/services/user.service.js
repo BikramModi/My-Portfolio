@@ -11,6 +11,23 @@ const createUser = async (userData) => {
   return userWithoutPassword;
 };
 
+
+export async function updatePassword(
+  userId,
+  password
+) {
+  return User.findByIdAndUpdate(
+    userId,
+    {
+      password,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+}
+
 const getAllUsers = async (query) => {
   const {
     page = 1,

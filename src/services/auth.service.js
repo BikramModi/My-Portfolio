@@ -3,7 +3,13 @@ import {
   verifyPendingRegistration,
   deletePendingRegistration,
   resendPendingRegistrationOTP,
+  storePasswordResetOTP,
+  verifyPasswordResetOTP,
+  verifyResetToken,
+  deleteResetToken,
 } from "./otp.service.js";
+
+import { updatePassword } from "./user.service.js";
 
 import User from "../models/user.model.js";
 
@@ -66,6 +72,70 @@ export const resendOTP = async ({
     email
   );
 };
+
+export const forgotPassword = async ({
+  email,
+}) => {
+  const user = await User.findOne({
+    email,
+  });
+
+  if (!user) {
+    throw new NotFoundError(
+      "This email is not registered."
+    );
+  }
+
+  await storePasswordResetOTP(user);
+
+  return {
+    message:
+      "Password reset verification code sent to your email.",
+  };
+};
+
+export const verifyResetOTP =
+    async ({ email, otp }) => {
+
+    const resetToken =
+        await verifyPasswordResetOTP(
+            email,
+            otp
+        );
+
+    return {
+        message:
+            "Verification successful.",
+        resetToken
+    };
+};
+
+export const resetPassword =
+  async ({
+    resetToken,
+    password,
+  }) => {
+
+    const data =
+      await verifyResetToken(
+        resetToken
+      );
+
+    await updatePassword(
+      data.userId,
+      password
+    );
+
+    await deleteResetToken(
+      resetToken
+    );
+
+    return {
+      message:
+        "Password reset successfully.",
+    };
+};
+
 
 export const login = async (userData) => {
   const user = await User.findOne({

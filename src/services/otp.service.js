@@ -12,6 +12,7 @@ import ConflictError from "../errors/conflict.error.js";
 const OTP_EXPIRY_SECONDS = 300;
 const RESEND_COOLDOWN_SECONDS = 60;
 const MAX_RESEND_ATTEMPTS = 3;
+const MAX_OTP_ATTEMPTS = 5;
 
 function generateOTP() {
   return crypto.randomInt(100000, 1000000).toString();
@@ -175,4 +176,155 @@ export async function resendPendingRegistrationOTP(
   return {
     message: "Verification code resent successfully.",
   };
+}
+
+export async function storePasswordResetOTP(user) {
+  const key = `reset:${user.email}`;
+
+  const existing = await redisClient.get(key);
+
+  if (existing) {
+    throw new ConflictError(
+      "A password reset code has already been sent."
+    );
+  }
+
+  const otp = generateOTP();
+
+  const otpHash = await hashOTP(otp);
+
+  const value = {
+  userId: user._id.toString(),
+  email: user.email,
+  otpHash,
+  resendCount: 0,
+  attempts: 0,
+  lastSentAt: Date.now(),
+};
+
+  await redisClient.set(
+    key,
+    JSON.stringify(value),
+    {
+      EX: OTP_EXPIRY_SECONDS,
+    }
+  );
+
+  await sendEmail({
+    to: user.email,
+    subject: "Reset your password",
+    text: `Your password reset code is ${otp}`,
+    html: `
+      <h2>Password Reset</h2>
+
+      <p>Hello ${user.name},</p>
+
+      <p>Your password reset code is:</p>
+
+      <h1 style="letter-spacing:6px;">${otp}</h1>
+
+      <p>This code expires in 5 minutes.</p>
+    `,
+    category: "Password Reset",
+  });
+
+  return true;
+}
+
+export async function verifyPasswordResetOTP(
+  email,
+  otp
+) {
+  const key = `reset:${email}`;
+
+  const pending = await redisClient.get(key);
+
+  if (!pending) {
+    throw new NotFoundError(
+      "Verification code expired or reset request not found."
+    );
+  }
+
+  const data = JSON.parse(pending);
+
+  const isValid = await bcrypt.compare(
+    otp,
+    data.otpHash
+  );
+
+  if (!isValid) {
+    data.attempts += 1;
+
+    // Too many failed attempts
+    if (data.attempts >= MAX_OTP_ATTEMPTS) {
+      await redisClient.del(key);
+
+      throw new UnauthorizedError(
+        "Maximum verification attempts exceeded. Please request a new password reset code."
+      );
+    }
+
+    // Save updated attempts while preserving the remaining TTL
+    const ttl = await redisClient.ttl(key);
+
+    await redisClient.set(
+      key,
+      JSON.stringify(data),
+      {
+        EX: ttl,
+      }
+    );
+
+    throw new UnauthorizedError(
+      `Invalid verification code. ${
+        MAX_OTP_ATTEMPTS - data.attempts
+      } attempt(s) remaining.`
+    );
+  }
+
+  // OTP is correct
+
+  const resetToken = crypto
+    .randomBytes(32)
+    .toString("hex");
+
+  await redisClient.set(
+    `reset-token:${resetToken}`,
+    JSON.stringify({
+      userId: data.userId,
+      email: data.email,
+    }),
+    {
+      EX: OTP_EXPIRY_SECONDS,
+    }
+  );
+
+  // OTP cannot be reused
+  await redisClient.del(key);
+
+  return resetToken;
+}
+
+export async function verifyResetToken(
+  resetToken
+) {
+  const key = `reset-token:${resetToken}`;
+
+  const data = await redisClient.get(key);
+
+  if (!data) {
+    throw new NotFoundError(
+      "Reset token expired."
+    );
+  }
+
+  return JSON.parse(data);
+}
+
+export async function deleteResetToken(
+  resetToken
+) {
+  await redisClient.del(
+    `reset-token:${resetToken}`
+  );
 }
