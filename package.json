@@ -7,11 +7,9 @@
     "start": "node src/index.js",
     "startfornormalnot docker": "dotenvx run -- node src/index.js",
     "dev": "dotenvx run -- nodemon src/index.js",
-
     "dev:container": "nodemon src/index.js",
     "docker:dev": "docker compose -f docker-compose.dev.yml up --build",
     "docker:down": "docker compose -f docker-compose.dev.yml down",
-    
     "test": "dotenvx run --env-file=.env.test -- cross-env NODE_ENV=test jest --runInBand",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -30,6 +28,7 @@
   },
   "homepage": "https://github.com/BikramModi/My-Portfolio#readme",
   "dependencies": {
+    "@google/genai": "^2.15.0",
     "axios": "^1.16.1",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.10.0",

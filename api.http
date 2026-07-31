@@ -164,7 +164,35 @@ Content-Type: application/json
     "prompt": "Introduce yourself in one paragraph."
 }
 
-###
+### RAG AI
+
+POST {{baseUrl}}/ai/chat/rag
+Content-Type: application/json
+
+{
+    "message": "Explain RAG"
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###############################################################
 # Phi-3

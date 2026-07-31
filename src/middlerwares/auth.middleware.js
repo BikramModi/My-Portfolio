@@ -13,6 +13,7 @@ const publicRoutes = [
   "/ai/health",
   "/ai/models",
   "/ai/chat",
+  "/ai/chat/rag",
 ];
 
 export const authMiddleware = async (req, res, next) => {
