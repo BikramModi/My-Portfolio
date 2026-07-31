@@ -41,9 +41,10 @@
     "mailtrap": "^4.8.0",
     "mongodb": "^7.2.0",
     "mongoose": "^9.6.2",
-    "multer": "^2.1.1",
+    "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "redis": "^6.1.0",
+    "streamifier": "^0.1.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

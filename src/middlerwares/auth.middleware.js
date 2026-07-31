@@ -14,6 +14,7 @@ const publicRoutes = [
   "/ai/models",
   "/ai/chat",
   "/ai/chat/rag",
+  "/documents/upload"
 ];
 
 export const authMiddleware = async (req, res, next) => {
