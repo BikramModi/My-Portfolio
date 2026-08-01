@@ -1,59 +1,56 @@
+import crypto from "crypto";
+import path from "path";
 import streamifier from "streamifier";
 
 import Document from "../../models/document.model.js";
-
 import cloudinary from "../../config/cloudinary.js";
 
 export async function uploadDocument({
   file,
-
   userId,
 }) {
-  const result =
-    await new Promise(
-      (resolve, reject) => {
-        const stream =
-          cloudinary.uploader.upload_stream(
-            {
-              folder: "rag-documents",
+  // Get the original file extension (.pdf, .docx, .txt, etc.)
+  const extension = path.extname(file.originalname);
 
-              resource_type: "raw",
-            },
+  // Generate a unique filename while preserving the extension
+  const publicId = `${crypto.randomUUID()}${extension}`;
 
-            (error, result) => {
-              if (error)
-                return reject(error);
+  const result = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "rag-documents",
+        resource_type: "auto", // or "raw" for non-image files
+        public_id: publicId,
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
 
-              resolve(result);
-            }
-          );
-
-        streamifier
-          .createReadStream(file.buffer)
-          .pipe(stream);
+        resolve(result);
       }
     );
 
-  const document =
-    await Document.create({
-      originalName:
-        file.originalname,
+    streamifier.createReadStream(file.buffer).pipe(stream);
+  });
 
-      filename:
-        result.display_name,
+  const document = await Document.create({
+    originalName: file.originalname,
 
-      mimeType:
-        file.mimetype,
+    // Stored filename in Cloudinary (e.g. uuid.pdf)
+    filename: result.public_id.split("/").pop(),
 
-      size: file.size,
+    mimeType: file.mimetype,
 
-      url: result.secure_url,
+    size: file.size,
 
-      cloudinaryId:
-        result.public_id,
+    url: result.secure_url,
 
-      uploadedBy: userId,
-    });
+    // Full Cloudinary public ID (e.g. rag-documents/uuid.pdf)
+    cloudinaryId: result.public_id,
+
+    uploadedBy: userId,
+  });
 
   return document;
 }
