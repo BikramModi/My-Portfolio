@@ -9,6 +9,8 @@ import { extractTXT } from "../extractors/txt.extractor.js";
 
 import NotFoundError from "../errors/not-found-error.error.js";
 
+import { createDocumentChunks } from "../services/rag/chunk.service.js";
+
 export async function processDocument(documentId) {
     const document = await Document.findById(documentId);
 
@@ -64,7 +66,7 @@ export async function processDocument(documentId) {
         /**
          * Save extracted content
          */
-        await DocumentContent.findOneAndUpdate(
+        const documentContent = await DocumentContent.findOneAndUpdate(
             {
                 document: document._id,
             },
@@ -93,6 +95,15 @@ export async function processDocument(documentId) {
                 upsert: true,
                 new: true,
             }
+        );
+
+        /**
+        * NEW STEP
+        *
+        * Split text into chunks.
+        */
+        await createDocumentChunks(
+            documentContent
         );
 
         /**
