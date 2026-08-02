@@ -18,8 +18,9 @@ const DOCUMENT_ROUTER = Router();
 
 DOCUMENT_ROUTER.post(
   "/upload",
-  validationMiddleware(uploadDocumentValidator),
   upload.single("file"),
+  validationMiddleware(uploadDocumentValidator),
+  
   async (req, res, next) => {
     try {
       const document = await uploadDocument({

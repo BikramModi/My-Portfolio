@@ -164,15 +164,26 @@ Content-Type: application/json
     "prompt": "Introduce yourself in one paragraph."
 }
 
-### RAG AI
+### Generate AI Response
 
-POST {{baseUrl}}/ai/chat/rag
+POST {{baseUrl}}/ai/chat/gen-ai
 Content-Type: application/json
 
 {
     "message": "Explain RAG"
     
 }
+
+### Generate RAG Response
+
+POST {{baseUrl}}/ai/chat/rag-ai
+Content-Type: application/json
+
+{
+    "message": "Explain Bikram projects?"
+    
+}
+
 
 ### Upload Document
 POST {{baseUrl}}/documents/upload

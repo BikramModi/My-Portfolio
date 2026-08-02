@@ -13,7 +13,8 @@ const publicRoutes = [
   "/ai/health",
   "/ai/models",
   "/ai/chat",
-  "/ai/chat/rag",
+  "/ai/chat/gen-ai",
+  "/ai/chat/rag-ai",
   "/documents/upload"
 ];
 

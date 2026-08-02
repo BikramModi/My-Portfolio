@@ -6,6 +6,8 @@ import Router from "express";
 
 
 import { generateResponse } from "../services/rag/ai.service.js";
+import { generateRAGResponse } from "../services/rag/rag.service.js";
+
 import { chatValidator } from "../validators/ai.validator.js";
 import validationMiddleware from "../middlerwares/validation.middleware.js";
 
@@ -63,7 +65,7 @@ AI_ROUTER.post("/chat",
 );
 
 
-AI_ROUTER.post("/chat/rag",
+AI_ROUTER.post("/chat/gen-ai",
     validationMiddleware(chatValidator),
     async (req, res, next) => {
         try {
@@ -82,6 +84,28 @@ AI_ROUTER.post("/chat/rag",
             next(error);
         }
     }
+);
+
+AI_ROUTER.post(
+  "/chat/rag-ai",
+  validationMiddleware(chatValidator),
+  async (req, res, next) => {
+    try {
+      const { message } = req.body;
+
+      const result =
+        await generateRAGResponse(message);
+
+      return res.status(200).json({
+        message:
+          "RAG response generated successfully.",
+
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 );
 
 
