@@ -10,6 +10,7 @@ import { extractTXT } from "../extractors/txt.extractor.js";
 import NotFoundError from "../errors/not-found-error.error.js";
 
 import { createDocumentChunks } from "../services/rag/chunk.service.js";
+import { createDocumentEmbeddings } from "../services/rag/embedding.service.js";
 
 export async function processDocument(documentId) {
     const document = await Document.findById(documentId);
@@ -105,6 +106,12 @@ export async function processDocument(documentId) {
         await createDocumentChunks(
             documentContent
         );
+
+        /**
+         * Create embeddings for the document.
+         */
+
+        await createDocumentEmbeddings(document._id);
 
         /**
          * Update document
