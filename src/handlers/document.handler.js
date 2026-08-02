@@ -9,36 +9,47 @@ import { uploadDocument } from "../services/rag/document.service.js";
 import upload from "../middlerwares/upload.middleware.js";
 
 
+import { processDocument } from "../processors/document.processor.js";
+
+
 const DOCUMENT_ROUTER = Router();
 
 
 
-DOCUMENT_ROUTER.post("/upload",
-    validationMiddleware(uploadDocumentValidator),
-    upload.single("file"),
-  async(
-    req,
-    res,
-    next
-) => {
+DOCUMENT_ROUTER.post(
+  "/upload",
+  validationMiddleware(uploadDocumentValidator),
+  upload.single("file"),
+  async (req, res, next) => {
     try {
-        const document =
-            await uploadDocument({
-                file: req.file,
+      const document = await uploadDocument({
+        file: req.file,
 
-                //userId: req.user.userId, // Assuming you have user authentication and can get the userId from the request object
-            });
+        // userId: req.user.userId
+      });
 
-        return res.status(201).json({
-            message:
-                "Document uploaded successfully.",
+      /**
+       * Start processing in background.
+       *
+       * Don't await.
+       */
+      processDocument(document._id).catch((error) => {
+        console.error(
+          "Document processing failed:",
+          error
+        );
+      });
 
-            data: document,
-        });
+      return res.status(201).json({
+        message:
+          "Document uploaded successfully.",
+
+        data: document,
+      });
     } catch (error) {
-        next(error);
+      next(error);
     }
-}
+  }
 );
 
 

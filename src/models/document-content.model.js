@@ -29,6 +29,15 @@ const DocumentContentSchema = new Schema(
       type: Number,
       default: 0,
     },
+    extractor: {
+        type: String,
+        enum: ["pdf", "docx", "txt"],
+    },
+
+    extractedAt: {
+        type: Date,
+        default: Date.now,
+    },
   },
   {
     timestamps: true,
