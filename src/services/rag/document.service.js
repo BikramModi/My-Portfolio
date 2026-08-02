@@ -50,6 +50,8 @@ export async function uploadDocument({
     cloudinaryId: result.public_id,
 
     uploadedBy: userId,
+
+    status: "UPLOADED",
   });
 
   return document;

@@ -54,7 +54,10 @@ const DocumentSchema = new Schema(
 
         processingCompletedAt: Date,
 
-        processingError: String,
+        processingError: {
+            type: String,
+            default: null,
+        },
     },
     {
         timestamps: true,
