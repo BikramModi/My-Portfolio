@@ -15,6 +15,7 @@ const publicRoutes = [
   "/ai/chat",
   "/ai/chat/gen-ai",
   "/ai/chat/rag-ai",
+  "/ai/chat/agentic-ai",
   "/documents/upload"
 ];
 

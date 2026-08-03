@@ -11,6 +11,8 @@ import { generateRAGResponse } from "../services/rag/rag.service.js";
 import { chatValidator } from "../validators/ai.validator.js";
 import validationMiddleware from "../middlerwares/validation.middleware.js";
 
+import { runAgent } from "../agent/agent.service.js";
+
 
 const AI_ROUTER = Router();
 
@@ -108,6 +110,30 @@ AI_ROUTER.post(
   }
 );
 
+AI_ROUTER.post(
+  "/chat/agentic-ai",
+  validationMiddleware(chatValidator),
+
+  async (req, res, next) => {
+    try {
+
+      const { message } = req.body;
+
+      const result =
+        await runAgent(message);
+
+      return res.status(200).json({
+        message:
+          "Agent response generated successfully.",
+
+        data: result,
+      });
+
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default AI_ROUTER;
 
