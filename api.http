@@ -184,6 +184,16 @@ Content-Type: application/json
     
 }
 
+### Generate Agentic Response
+POST {{baseUrl}}/ai/chat/agentic-ai
+Content-Type: application/json
+
+{
+    "message": "what is html css?"
+    
+}
+
+
 
 ### Upload Document
 POST {{baseUrl}}/documents/upload
