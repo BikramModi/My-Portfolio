@@ -11,7 +11,8 @@ import { generateRAGResponse } from "../services/rag/rag.service.js";
 import { chatValidator } from "../validators/ai.validator.js";
 import validationMiddleware from "../middlerwares/validation.middleware.js";
 
-import { runAgent } from "../agent/agent.service.js";
+// import { runAgent } from "../agent/agent.service.js";
+import { runAgent } from "../agent/agent.js";
 
 
 const AI_ROUTER = Router();

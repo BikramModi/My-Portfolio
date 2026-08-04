@@ -6,6 +6,8 @@ export function buildResponse(state) {
 
         requestId: state.requestId,
 
+        plan: state.plan,
+
         metadata: {
             startedAt: state.metadata.startedAt,
             completedAt: Date.now(),

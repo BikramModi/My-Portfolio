@@ -13,7 +13,11 @@ export function createAgentState({
 
         context: {},
 
-        plan: null,
+        plan: {
+            intent: null,
+            workflow: null,
+            tools: []
+        },
 
         toolResult: null,
 
