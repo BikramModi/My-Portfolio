@@ -1,7 +1,10 @@
 import { routeTool }
   from "./tool-router.js";
 
-export async function runAgent(message) {
+export async function runAgent({
+    message,
+    user
+}) {
 
   const result =
     await routeTool(message);
