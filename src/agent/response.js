@@ -1,25 +1,24 @@
-export function buildResponse(state){
+export function buildResponse(state) {
+    return {
+        answer: state.answer,
 
-    return{
+        requestId: state.requestId,
 
-        answer:state.answer,
+        plan: state.plan,
 
-        requestId:state.requestId,
+        toolResults: state.toolResults,
 
-        plan:state.plan,
+        prompt: state.prompt,
 
-        toolResult:state.toolResult,
+        serializedPrompt:
+            state.serializedPrompt,
 
-        metadata:{
-
+        metadata: {
             startedAt:
-            state.metadata.startedAt,
+                state.metadata.startedAt,
 
             completedAt:
-            Date.now()
-
-        }
-
+                Date.now(),
+        },
     };
-
 }

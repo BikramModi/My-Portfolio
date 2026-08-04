@@ -19,11 +19,17 @@ export function createAgentState({
             tools: []
         },
 
-        toolResults:[],
+        toolResults: [],
 
-        prompt:null,
+        prompt: {
+            system: "",
+            context: "",
+            user: "",
+        },
 
-        llmResponse:null,
+        serializedPrompt: "",
+
+        llmResponse: null,
 
         answer: null,
 
