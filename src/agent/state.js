@@ -19,7 +19,11 @@ export function createAgentState({
             tools: []
         },
 
-        toolResult: null,
+        toolResults:[],
+
+        prompt:null,
+
+        llmResponse:null,
 
         answer: null,
 

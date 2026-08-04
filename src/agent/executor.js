@@ -1,37 +1,24 @@
-import { getTool }
-from "../tools/tool-manager.js";
+import { getTool } from "../tools/tool-manager.js";
 
-export async function executePlan(state){
+export async function executePlan(state) {
+    state.toolResults = [];
 
-    const results=[];
+    for (const toolName of state.plan.tools) {
+        const tool = getTool(toolName);
 
-    for(const toolName of state.plan.tools){
-
-        const tool=getTool(toolName);
-
-        if(!tool){
-
+        if (!tool) {
             throw new Error(
                 `Tool "${toolName}" not found.`
             );
-
         }
 
-        const result=
-            await tool.execute(state);
+        const result = await tool.execute(state);
 
-        results.push({
-
-            tool:toolName,
-
-            result
-
+        state.toolResults.push({
+            tool: tool.name,
+            data: result,
         });
-
     }
 
-    state.toolResult=results;
-
     return state;
-
 }
