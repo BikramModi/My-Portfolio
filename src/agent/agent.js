@@ -5,6 +5,7 @@ import { executePlan } from "./executor.js";
 import { buildPrompt } from "../prompt/prompt-builder.js";
 import { serializePrompt } from "../prompt/prompt-serializer.js";
 import { buildResponse } from "./response.js";
+import { generateLLMResponse } from "../llm/llm-router.js";
 
 export async function runAgent({
     message,
@@ -25,9 +26,7 @@ export async function runAgent({
 
     serializePrompt(state);
 
-    // Temporary placeholder until Module 6
-    state.answer =
-        "Prompt successfully built. Waiting for LLM generation.";
+   await generateLLMResponse(state);
 
     return buildResponse(state);
 }
