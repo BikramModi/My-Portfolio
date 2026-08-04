@@ -1,16 +1,23 @@
-export function buildResponse(state) {
+export function buildResponse(state){
 
-    return {
+    return{
 
-        answer: state.answer,
+        answer:state.answer,
 
-        requestId: state.requestId,
+        requestId:state.requestId,
 
-        plan: state.plan,
+        plan:state.plan,
 
-        metadata: {
-            startedAt: state.metadata.startedAt,
-            completedAt: Date.now(),
+        toolResult:state.toolResult,
+
+        metadata:{
+
+            startedAt:
+            state.metadata.startedAt,
+
+            completedAt:
+            Date.now()
+
         }
 
     };

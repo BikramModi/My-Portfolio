@@ -1,6 +1,16 @@
 import { generateRAGResponse }
-  from "../services/rag/rag.service.js";
+    from "../services/rag/rag.service.js";
 
-export async function ragTool(query) {
-  return await generateRAGResponse(query);
-}
+export const ragTool = {
+
+    name: "rag",
+
+    async execute(state){
+
+        return await generateRAGResponse(
+            state.message
+        );
+
+    }
+
+};
