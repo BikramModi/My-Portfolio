@@ -189,7 +189,7 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "calculate 3+6"
+    "message": "calculate 120+985-5987"
     
 }
 

@@ -1,15 +1,23 @@
-export async function calculatorTool(expression) {
-  try {
-    const result = Function(
-      `"use strict"; return (${expression})`
-    )();
+export const calculatorTool={
 
-    return {
-      answer: String(result),
-    };
-  } catch {
-    return {
-      answer: "Invalid expression",
-    };
-  }
+    name:"calculator",
+
+    async execute(state){
+
+        const expression=
+            state.message.replace("calculate","");
+
+        const answer=
+            Function(
+            `"use strict";return (${expression})`
+            )();
+
+        return{
+
+            answer:String(answer)
+
+        };
+
+    }
+
 }
