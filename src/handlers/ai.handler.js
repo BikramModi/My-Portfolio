@@ -89,50 +89,51 @@ AI_ROUTER.post("/chat/gen-ai",
 );
 
 AI_ROUTER.post(
-  "/chat/rag-ai",
-  validationMiddleware(chatValidator),
-  async (req, res, next) => {
-    try {
-      const { message } = req.body;
+    "/chat/rag-ai",
+    validationMiddleware(chatValidator),
+    async (req, res, next) => {
+        try {
+            const { message } = req.body;
 
-      const result =
-        await generateRAGResponse(message);
+            const result =
+                await generateRAGResponse(message);
 
-      return res.status(200).json({
-        message:
-          "RAG response generated successfully.",
+            return res.status(200).json({
+                message:
+                    "RAG response generated successfully.",
 
-        data: result,
-      });
-    } catch (error) {
-      next(error);
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
     }
-  }
 );
 
 AI_ROUTER.post(
-  "/chat/agentic-ai",
-  validationMiddleware(chatValidator),
+    "/chat/agentic-ai",
+    validationMiddleware(chatValidator),
 
-  async (req, res, next) => {
-    try {
+    async (req, res, next) => {
+        try {
 
-      const { message } = req.body;
+            const { message } = req.body;
 
-      const result =
-        await runAgent(message);
+            const result = await runAgent({
+                message,
+                user: req.user ?? null,
+            });
 
-      return res.status(200).json({
-        message:
-          "Agent response generated successfully.",
+            return res.status(200).json({
+                success: true,
+                message: "Agent response generated successfully.",
+                data: result,
+            });
 
-        data: result,
-      });
-
-    } catch (error) {
-      next(error);
+        } catch (error) {
+            next(error);
+        }
     }
-  }
 );
 
 export default AI_ROUTER;
