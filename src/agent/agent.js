@@ -1,5 +1,6 @@
 import { createAgentState } from "./state.js";
 import { buildContext } from "./context.js";
+import { createPlan } from "./planner.js";
 import { buildResponse } from "./response.js";
 
 export async function runAgent({
@@ -7,19 +8,19 @@ export async function runAgent({
     user,
 }) {
 
-    // Create state
     const state = createAgentState({
         message,
         user,
     });
 
-    // Build execution context
     await buildContext(state);
 
-    // Temporary answer
-    state.answer =
-        "Agent runtime initialized successfully.";
+    state.plan =
+        await createPlan(state);
 
-    // Build standardized response
+    state.answer =
+        "Planning completed successfully.";
+
     return buildResponse(state);
+
 }
