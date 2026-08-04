@@ -1,4 +1,5 @@
 import { generateGeminiResponse } from "./gemini.model.js";
+import { generateOllamaResponse } from "./ollama.model.js";
 
 export async function generateAIResponse(prompt) {
   switch (process.env.AI_PROVIDER) {
@@ -9,7 +10,7 @@ export async function generateAIResponse(prompt) {
       throw new Error("OpenAI not implemented.");
 
     case "ollama":
-      throw new Error("Ollama not implemented.");
+    return generateOllamaResponse(prompt);
 
     default:
       throw new Error(

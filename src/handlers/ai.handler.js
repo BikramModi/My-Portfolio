@@ -103,7 +103,7 @@ AI_ROUTER.post(
                 message:
                     "RAG response generated successfully.",
 
-                data: result,
+                data: result.answer,
             });
         } catch (error) {
             next(error);

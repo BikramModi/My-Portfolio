@@ -170,7 +170,7 @@ POST {{baseUrl}}/ai/chat/gen-ai
 Content-Type: application/json
 
 {
-    "message": "Explain RAG"
+    "message": "hello gemini whhat is your exact nodel?"
     
 }
 
@@ -180,7 +180,7 @@ POST {{baseUrl}}/ai/chat/rag-ai
 Content-Type: application/json
 
 {
-    "message": "6+6"
+    "message": " what is 3+3 "
     
 }
 
