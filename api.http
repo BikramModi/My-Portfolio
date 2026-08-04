@@ -180,7 +180,7 @@ POST {{baseUrl}}/ai/chat/rag-ai
 Content-Type: application/json
 
 {
-    "message": "Explain Bikram projects?"
+    "message": "html css"
     
 }
 

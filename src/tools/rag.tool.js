@@ -1,15 +1,25 @@
-import { generateRAGResponse }
-    from "../services/rag/rag.service.js";
+import {
+    retrieveRelevantDocuments
+}
+from "../services/rag/retrieval.service.js";
 
-export const ragTool = {
+export const ragTool={
 
-    name: "rag",
+    name:"rag",
+
+    description:
+        "Retrieve relevant portfolio documents.",
 
     async execute(state){
 
-        return await generateRAGResponse(
-            state.message
-        );
+        return await retrieveRelevantDocuments({
+
+            query:
+                state.message,
+
+            topK:5
+
+        });
 
     }
 
