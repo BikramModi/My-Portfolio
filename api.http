@@ -180,7 +180,7 @@ POST {{baseUrl}}/ai/chat/rag-ai
 Content-Type: application/json
 
 {
-    "message": "html css"
+    "message": "6+6"
     
 }
 
@@ -189,7 +189,7 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "calculate 120+985-5987"
+    "message": "html"
     
 }
 
