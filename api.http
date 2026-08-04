@@ -180,7 +180,7 @@ POST {{baseUrl}}/ai/chat/rag-ai
 Content-Type: application/json
 
 {
-    "message": " what is 3+3 "
+    "message": " what is React Context API?"
     
 }
 
@@ -189,7 +189,7 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "html"
+    "message": "show me github repos  "
     
 }
 
