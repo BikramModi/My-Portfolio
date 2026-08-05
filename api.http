@@ -180,7 +180,7 @@ POST {{baseUrl}}/ai/chat/rag-ai
 Content-Type: application/json
 
 {
-    "message": " what is React Context API?"
+    "message": " biker boy"
     
 }
 
@@ -189,7 +189,7 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "show me github repos  "
+    "message": "who is biker boy and what are his projects?"
     
 }
 
@@ -203,7 +203,7 @@ Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0g
 Content-Disposition: form-data; name="file"; filename="w3.pdf"
 Content-Type: application/pdf
 
-< ./src/test-data/w3.pdf
+< ./src/test-data/resume.pdf
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 

@@ -28,7 +28,7 @@ export async function generateRAGResponse(
         buildRAGPrompt({
 
             context:
-                retrieval.context,
+                retrieval.retrievedContext,
 
             question,
 
