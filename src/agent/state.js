@@ -1,17 +1,24 @@
 import crypto from "crypto";
 
 export function createAgentState({
+      requestId,
     message,
     user = null,
+    conversationId = null,
 }) {
     return {
-        requestId: crypto.randomUUID(),
+        requestId,
 
         message,
 
         user,
 
         context: {},
+
+         memory: {
+            conversationId,
+            messages: [],
+        },
 
         plan: {
             intent: null,

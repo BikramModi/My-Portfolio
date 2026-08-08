@@ -10,11 +10,15 @@ import { generateLLMResponse } from "../llm/llm-router.js";
 export async function runAgent({
     message,
     user,
+    conversationId,
 }) {
     const state = createAgentState({
         message,
         user,
+        conversationId,
     });
+
+    // Memory loading will be added here in Module 7B.
 
     await buildContext(state);
 
