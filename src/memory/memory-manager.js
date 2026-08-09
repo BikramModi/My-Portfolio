@@ -1,37 +1,24 @@
 export class MemoryManager {
 
     constructor({
-    shortTerm,
-    longTerm,
-}) {
-    console.log("🧠 Short-term provider:", shortTerm);
-    console.log("🧠 Long-term provider:", longTerm);
+        shortTerm,
+        longTerm,
+    }) {
+        if (!shortTerm) {
+            throw new Error(
+                "Short-term memory provider is required."
+            );
+        }
 
-    console.log(
-        "shortTerm.addMessage:",
-        typeof shortTerm?.addMessage
-    );
+        if (!longTerm) {
+            throw new Error(
+                "Long-term memory provider is required."
+            );
+        }
 
-    console.log(
-        "longTerm.addMessage:",
-        typeof longTerm?.addMessage
-    );
-
-    if (!shortTerm) {
-        throw new Error(
-            "Short-term memory provider is required."
-        );
+        this.shortTerm = shortTerm;
+        this.longTerm = longTerm;
     }
-
-    if (!longTerm) {
-        throw new Error(
-            "Long-term memory provider is required."
-        );
-    }
-
-    this.shortTerm = shortTerm;
-    this.longTerm = longTerm;
-}
 
     async getRecentMessages(
         conversationId,
@@ -41,7 +28,18 @@ export class MemoryManager {
             return [];
         }
 
-        return this.shortTerm
+        const shortTermMessages =
+            await this.shortTerm
+                .getRecentMessages(
+                    conversationId,
+                    limit
+                );
+
+        if (shortTermMessages.length) {
+            return shortTermMessages;
+        }
+
+        return this.longTerm
             .getRecentMessages(
                 conversationId,
                 limit
@@ -59,21 +57,34 @@ export class MemoryManager {
             );
         }
 
-        const results =
-            await Promise.all([
-                this.shortTerm.addMessage(
-                    conversationId,
-                    message
-                ),
+        /*
+         * MongoDB is the durable source
+         * of truth.
+         */
+        const savedMessage =
+            await this.longTerm.addMessage(
+                conversationId,
+                message,
+                options
+            );
 
-                this.longTerm.addMessage(
-                    conversationId,
-                    message,
-                    options
-                ),
-            ]);
+        /*
+         * Redis is the short-term
+         * acceleration layer.
+         */
+        try {
+            await this.shortTerm.addMessage(
+                conversationId,
+                message
+            );
+        } catch (error) {
+            console.error(
+                "Short-term memory update failed:",
+                error
+            );
+        }
 
-        return results[0];
+        return savedMessage;
     }
 
     async clearConversation(
@@ -83,16 +94,21 @@ export class MemoryManager {
             return;
         }
 
-        await Promise.all([
-            this.shortTerm
-                .clearConversation(
-                    conversationId
-                ),
+        await this.longTerm
+            .clearConversation(
+                conversationId
+            );
 
-            this.longTerm
+        try {
+            await this.shortTerm
                 .clearConversation(
                     conversationId
-                ),
-        ]);
+                );
+        } catch (error) {
+            console.error(
+                "Failed to clear short-term memory:",
+                error
+            );
+        }
     }
 }

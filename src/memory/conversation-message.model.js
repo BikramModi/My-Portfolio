@@ -3,6 +3,14 @@ import mongoose from "mongoose";
 const conversationMessageSchema =
     new mongoose.Schema(
         {
+            messageId: {
+                type: String,
+                required: true,
+                unique: true,
+                index: true,
+                trim: true,
+            },
+
             conversationId: {
                 type: String,
                 required: true,

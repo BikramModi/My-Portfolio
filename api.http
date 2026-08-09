@@ -189,8 +189,8 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "what was previous question?",
-    "conversationId": "6f7a8669-3b02-42e2-a978-30e5ca5da5a9"
+    "message": "what was my previous question?",
+    "conversationId": "7515bb8b-254b-45c9-9f2e-00efb60b6b9c"
     
     
 }
