@@ -25,3 +25,7 @@ export {
 export {
     generateConversationId,
 } from "./conversation-id.js";
+
+export {
+    limitConversationMemory,
+} from "./memory-limiter.service.js";
