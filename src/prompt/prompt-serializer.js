@@ -1,6 +1,7 @@
 export function serializePrompt(state) {
     const {
         system,
+        memory,
         context,
         tools,
         user,
@@ -9,16 +10,27 @@ export function serializePrompt(state) {
     const toolSection =
         tools?.length
             ? tools
-                .map(({ tool, data }) =>
-                    `Tool: ${tool}
-${JSON.stringify(data, null, 2)}`
+                .map(
+                    ({ tool, data }) =>
+                        `Tool: ${tool}\n\n${JSON.stringify(
+                            data,
+                            null,
+                            2
+                        )}`
                 )
-                .join("\n\n------------------------------\n\n")
+                .join(
+                    "\n\n------------------------------\n\n"
+                )
             : "No tool outputs available.";
 
     state.serializedPrompt = `
 SYSTEM
 ${system}
+
+==============================
+
+CONVERSATION HISTORY
+${memory || "No previous conversation."}
 
 ==============================
 

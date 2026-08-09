@@ -118,16 +118,22 @@ AI_ROUTER.post(
     async (req, res, next) => {
         try {
 
-            const { message } = req.body;
-
-            const result = await runAgent({
+            const {
                 message,
-                user: req.user ?? null,
-            });
+                conversationId,
+            } = req.body;
+
+            const result =
+                await runAgent({
+                    message,
+                    user: req.user ?? null,
+                    conversationId,
+                });
 
             return res.status(200).json({
                 success: true,
-                message: "Agent response generated successfully.",
+                message:
+                    "Agent response generated successfully.",
                 data: result,
             });
 

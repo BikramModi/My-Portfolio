@@ -7,13 +7,14 @@ import {
 } from "./redis-memory.service.js";
 
 import {
-    createMemoryProvider,
-} from "./memory.interface.js";
-
-const provider =
-    createMemoryProvider(
-        redisMemoryProvider
-    );
+    mongoMemoryProvider,
+} from "./mongo-memory.service.js";
 
 export const memoryManager =
-    new MemoryManager(provider);
+    new MemoryManager({
+        shortTerm:
+            redisMemoryProvider,
+
+        longTerm:
+            mongoMemoryProvider,
+    });

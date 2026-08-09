@@ -7,22 +7,38 @@ import { serializePrompt } from "../prompt/prompt-serializer.js";
 import { buildResponse } from "./response.js";
 import { generateLLMResponse } from "../llm/llm-router.js";
 
+import {
+    memoryManager,
+    saveConversationMemory,
+    generateConversationId,
+} from "../memory/memory.index.js";
+
 export async function runAgent({
     message,
     user,
     conversationId,
 }) {
+    const activeConversationId =
+        conversationId ??
+        generateConversationId();
+
     const state = createAgentState({
         message,
         user,
-        conversationId,
+        conversationId:
+            activeConversationId,
     });
 
-    // Memory loading will be added here in Module 7B.
+    state.memory.messages =
+        await memoryManager.getRecentMessages(
+            activeConversationId,
+            10
+        );
 
     await buildContext(state);
 
-    state.plan = await createPlan(state);
+    state.plan =
+        await createPlan(state);
 
     await executePlan(state);
 
@@ -30,7 +46,9 @@ export async function runAgent({
 
     serializePrompt(state);
 
-   await generateLLMResponse(state);
+    await generateLLMResponse(state);
+
+    await saveConversationMemory(state);
 
     return buildResponse(state);
 }
