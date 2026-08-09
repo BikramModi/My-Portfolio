@@ -1,9 +1,32 @@
+import {
+    mongoMemoryProvider,
+} from "../memory/mongo-memory.service.js";
+
 export async function buildContext(state) {
 
-    state.context = {
-        timestamp: new Date().toISOString(),
+    const conversationId =
+        state.memory.conversationId;
 
-        conversationId: null,
+    let messages = [];
+
+    if (conversationId) {
+        messages =
+            await mongoMemoryProvider
+                .getRecentMessages(
+                    conversationId
+                );
+    }
+
+    state.memory.messages =
+        messages;
+
+    state.context = {
+        timestamp:
+            new Date().toISOString(),
+
+        conversationId,
+
+        memory: messages,
     };
 
     return state;

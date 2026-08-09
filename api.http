@@ -189,7 +189,9 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "who is biker boy and what are his projects?"
+    "message": "what was previous question?",
+    "conversationId": "6f7a8669-3b02-42e2-a978-30e5ca5da5a9"
+    
     
 }
 

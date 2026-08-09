@@ -1,26 +1,47 @@
 export class MemoryManager {
 
-    constructor(provider) {
+    constructor({
+    shortTerm,
+    longTerm,
+}) {
+    console.log("🧠 Short-term provider:", shortTerm);
+    console.log("🧠 Long-term provider:", longTerm);
 
-        if (!provider) {
-            throw new Error(
-                "Memory provider is required."
-            );
-        }
+    console.log(
+        "shortTerm.addMessage:",
+        typeof shortTerm?.addMessage
+    );
 
-        this.provider = provider;
+    console.log(
+        "longTerm.addMessage:",
+        typeof longTerm?.addMessage
+    );
+
+    if (!shortTerm) {
+        throw new Error(
+            "Short-term memory provider is required."
+        );
     }
+
+    if (!longTerm) {
+        throw new Error(
+            "Long-term memory provider is required."
+        );
+    }
+
+    this.shortTerm = shortTerm;
+    this.longTerm = longTerm;
+}
 
     async getRecentMessages(
         conversationId,
         limit = 10
     ) {
-
         if (!conversationId) {
             return [];
         }
 
-        return this.provider
+        return this.shortTerm
             .getRecentMessages(
                 conversationId,
                 limit
@@ -29,32 +50,49 @@ export class MemoryManager {
 
     async addMessage(
         conversationId,
-        message
+        message,
+        options = {}
     ) {
-
         if (!conversationId) {
             throw new Error(
                 "Conversation ID is required."
             );
         }
 
-        return this.provider.addMessage(
-            conversationId,
-            message
-        );
+        const results =
+            await Promise.all([
+                this.shortTerm.addMessage(
+                    conversationId,
+                    message
+                ),
+
+                this.longTerm.addMessage(
+                    conversationId,
+                    message,
+                    options
+                ),
+            ]);
+
+        return results[0];
     }
 
     async clearConversation(
         conversationId
     ) {
-
         if (!conversationId) {
             return;
         }
 
-        return this.provider
-            .clearConversation(
-                conversationId
-            );
+        await Promise.all([
+            this.shortTerm
+                .clearConversation(
+                    conversationId
+                ),
+
+            this.longTerm
+                .clearConversation(
+                    conversationId
+                ),
+        ]);
     }
 }
