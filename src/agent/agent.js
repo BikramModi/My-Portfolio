@@ -13,6 +13,10 @@ import {
     generateConversationId,
 } from "../memory/memory.index.js";
 
+import {
+    MEMORY_LIMITS,
+} from "../memory/memory-limit.config.js";
+
 export async function runAgent({
     message,
     user,
@@ -32,7 +36,7 @@ export async function runAgent({
     state.memory.messages =
         await memoryManager.getRecentMessages(
             activeConversationId,
-            10
+            MEMORY_LIMITS.maxMessages
         );
 
     await buildContext(state);

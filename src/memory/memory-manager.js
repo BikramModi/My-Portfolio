@@ -1,3 +1,7 @@
+import {
+    limitConversationMemory,
+} from "./memory-limiter.service.js";
+
 export class MemoryManager {
 
     constructor({
@@ -16,8 +20,11 @@ export class MemoryManager {
             );
         }
 
-        this.shortTerm = shortTerm;
-        this.longTerm = longTerm;
+        this.shortTerm =
+            shortTerm;
+
+        this.longTerm =
+            longTerm;
     }
 
     async getRecentMessages(
@@ -35,15 +42,18 @@ export class MemoryManager {
                     limit
                 );
 
-        if (shortTermMessages.length) {
-            return shortTermMessages;
-        }
+        const messages =
+            shortTermMessages.length
+                ? shortTermMessages
+                : await this.longTerm
+                    .getRecentMessages(
+                        conversationId,
+                        limit
+                    );
 
-        return this.longTerm
-            .getRecentMessages(
-                conversationId,
-                limit
-            );
+        return limitConversationMemory(
+            messages
+        );
     }
 
     async addMessage(
@@ -57,26 +67,20 @@ export class MemoryManager {
             );
         }
 
-        /*
-         * MongoDB is the durable source
-         * of truth.
-         */
         const savedMessage =
-            await this.longTerm.addMessage(
-                conversationId,
-                message,
-                options
-            );
+            await this.longTerm
+                .addMessage(
+                    conversationId,
+                    message,
+                    options
+                );
 
-        /*
-         * Redis is the short-term
-         * acceleration layer.
-         */
         try {
-            await this.shortTerm.addMessage(
-                conversationId,
-                message
-            );
+            await this.shortTerm
+                .addMessage(
+                    conversationId,
+                    message
+                );
         } catch (error) {
             console.error(
                 "Short-term memory update failed:",
