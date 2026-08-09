@@ -1,5 +1,7 @@
 import Conversation from "./conversation.model.js";
-import ConversationMessage from "./conversation-message.model.js";
+
+import ConversationMessage
+    from "./conversation-message.model.js";
 
 export const mongoMemoryProvider = {
 
@@ -10,12 +12,6 @@ export const mongoMemoryProvider = {
         if (!conversationId) {
             return [];
         }
-
-
-        // const count =
-            await ConversationMessage.countDocuments({
-                conversationId,
-            });
 
         const messages =
             await ConversationMessage
@@ -28,13 +24,17 @@ export const mongoMemoryProvider = {
                 .limit(limit)
                 .lean();
 
-       
-
         return messages
             .reverse()
             .map((message) => ({
+                messageId:
+                    message.messageId,
+
                 role: message.role,
-                content: message.content,
+
+                content:
+                    message.content,
+
                 timestamp:
                     message.createdAt,
             }));
@@ -51,9 +51,37 @@ export const mongoMemoryProvider = {
             );
         }
 
+        if (!message?.messageId) {
+            throw new Error(
+                "Message ID is required."
+            );
+        }
+
         const {
             userId = null,
         } = options;
+
+        const existing =
+            await ConversationMessage.findOne({
+                messageId:
+                    message.messageId,
+            });
+
+        if (existing) {
+            return {
+                messageId:
+                    existing.messageId,
+
+                role:
+                    existing.role,
+
+                content:
+                    existing.content,
+
+                timestamp:
+                    existing.createdAt,
+            };
+        }
 
         let conversation =
             await Conversation.findOne({
@@ -86,10 +114,19 @@ export const mongoMemoryProvider = {
 
         const savedMessage =
             await ConversationMessage.create({
+                messageId:
+                    message.messageId,
+
                 conversationId,
+
                 userId,
-                role: message.role,
-                content: message.content,
+
+                role:
+                    message.role,
+
+                content:
+                    message.content,
+
                 sequence,
             });
 
@@ -106,8 +143,15 @@ export const mongoMemoryProvider = {
         );
 
         return {
-            role: savedMessage.role,
-            content: savedMessage.content,
+            messageId:
+                savedMessage.messageId,
+
+            role:
+                savedMessage.role,
+
+            content:
+                savedMessage.content,
+
             timestamp:
                 savedMessage.createdAt,
         };

@@ -1,13 +1,17 @@
 import redisClient from "../config/redis.js";
 
 const DEFAULT_MESSAGE_LIMIT = 10;
-const DEFAULT_TTL_SECONDS = 60 * 60 * 24;
+const DEFAULT_TTL_SECONDS =
+    60 * 60 * 24;
 
-function getConversationKey(conversationId) {
+function getConversationKey(
+    conversationId
+) {
     return `ai:conversation:${conversationId}`;
 }
 
 export const redisMemoryProvider = {
+
     async getRecentMessages(
         conversationId,
         limit = DEFAULT_MESSAGE_LIMIT
@@ -17,7 +21,9 @@ export const redisMemoryProvider = {
         }
 
         const key =
-            getConversationKey(conversationId);
+            getConversationKey(
+                conversationId
+            );
 
         const messages =
             await redisClient.lRange(
@@ -42,15 +48,43 @@ export const redisMemoryProvider = {
             );
         }
 
+        if (!message?.messageId) {
+            throw new Error(
+                "Message ID is required."
+            );
+        }
+
         const key =
             getConversationKey(
                 conversationId
             );
 
-        await redisClient.rPush(
-            key,
-            JSON.stringify(message)
-        );
+        const existingMessages =
+            await redisClient.lRange(
+                key,
+                0,
+                -1
+            );
+
+        const alreadyExists =
+            existingMessages.some(
+                (item) => {
+                    const parsed =
+                        JSON.parse(item);
+
+                    return (
+                        parsed.messageId ===
+                        message.messageId
+                    );
+                }
+            );
+
+        if (!alreadyExists) {
+            await redisClient.rPush(
+                key,
+                JSON.stringify(message)
+            );
+        }
 
         await redisClient.lTrim(
             key,

@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 export function createConversationMessage({
     role,
     content,
@@ -27,6 +29,7 @@ export function createConversationMessage({
     }
 
     return {
+        messageId: crypto.randomUUID(),
         role,
         content,
         timestamp: new Date(),

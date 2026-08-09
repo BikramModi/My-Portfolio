@@ -15,6 +15,18 @@ export async function saveConversationMemory(
         );
     }
 
+    if (!state.message) {
+        throw new Error(
+            "User message is required to save memory."
+        );
+    }
+
+    if (!state.answer) {
+        throw new Error(
+            "Assistant answer is required to save memory."
+        );
+    }
+
     const userMessage =
         createConversationMessage({
             role: "user",
@@ -31,7 +43,8 @@ export async function saveConversationMemory(
         conversationId,
         userMessage,
         {
-            userId: state.user?._id,
+            userId:
+                state.user?._id,
         }
     );
 
@@ -39,7 +52,8 @@ export async function saveConversationMemory(
         conversationId,
         assistantMessage,
         {
-            userId: state.user?._id,
+            userId:
+                state.user?._id,
         }
     );
 }
