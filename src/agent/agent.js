@@ -7,7 +7,7 @@ import { serializePrompt } from "../prompt/prompt-serializer.js";
 import { buildResponse } from "./response.js";
 import { generateLLMResponse } from "../llm/llm-router.js";
 
-import { addTraceEvent } from "../observability/trace.service.js";
+import { startTraceEvent, completeTraceEvent } from "../observability/trace.service.js";
 
 import {
     memoryManager,
@@ -36,15 +36,18 @@ export async function runAgent({
                 activeConversationId,
         });
 
-    addTraceEvent(state.trace, {
-        type: "agent",
-        name: "agent.run",
-        status: "started",
-        metadata: {
-            conversationId:
-                state.conversationId,
-        },
-    });
+    const agentEvent =
+        startTraceEvent(
+            state.trace,
+            {
+                type: "agent",
+                name: "agent.run",
+                metadata: {
+                    conversationId:
+                        state.conversationId,
+                },
+            }
+        );
 
     try {
         state.memory.messages =
@@ -69,33 +72,21 @@ export async function runAgent({
 
         await saveConversationMemory(state);
 
-        addTraceEvent(
+        completeTraceEvent(
             state.trace,
-            {
-                type: "agent",
-                name: "agent.run",
-                status: "completed",
-                metadata: {
-                    conversationId:
-                        state.conversationId,
-                },
-            }
+            agentEvent.eventId
         );
 
         return buildResponse(state);
 
     } catch (error) {
 
-        addTraceEvent(
+        completeTraceEvent(
             state.trace,
+            agentEvent.eventId,
             {
-                type: "agent",
-                name: "agent.run",
                 status: "failed",
                 metadata: {
-                    conversationId:
-                        state.conversationId,
-
                     error:
                         error.message,
                 },
