@@ -7,6 +7,8 @@ import { serializePrompt } from "../prompt/prompt-serializer.js";
 import { buildResponse } from "./response.js";
 import { generateLLMResponse } from "../llm/llm-router.js";
 
+import { addTraceEvent } from "../observability/trace.service.js";
+
 import {
     memoryManager,
     saveConversationMemory,
@@ -26,33 +28,80 @@ export async function runAgent({
         conversationId ??
         generateConversationId();
 
-    const state = createAgentState({
-        message,
-        user,
-        conversationId:
-            activeConversationId,
+    const state =
+        createAgentState({
+            message,
+            user,
+            conversationId:
+                activeConversationId,
+        });
+
+    addTraceEvent(state.trace, {
+        type: "agent",
+        name: "agent.run",
+        status: "started",
+        metadata: {
+            conversationId:
+                state.conversationId,
+        },
     });
 
-    state.memory.messages =
-        await memoryManager.getRecentMessages(
-            activeConversationId,
-            MEMORY_LIMITS.maxMessages
+    try {
+        state.memory.messages =
+            await memoryManager
+                .getRecentMessages(
+                    activeConversationId,
+                    MEMORY_LIMITS.maxMessages
+                );
+
+        await buildContext(state);
+
+        state.plan =
+            await createPlan(state);
+
+        await executePlan(state);
+
+        buildPrompt(state);
+
+        serializePrompt(state);
+
+        await generateLLMResponse(state);
+
+        await saveConversationMemory(state);
+
+        addTraceEvent(
+            state.trace,
+            {
+                type: "agent",
+                name: "agent.run",
+                status: "completed",
+                metadata: {
+                    conversationId:
+                        state.conversationId,
+                },
+            }
         );
 
-    await buildContext(state);
+        return buildResponse(state);
 
-    state.plan =
-        await createPlan(state);
+    } catch (error) {
 
-    await executePlan(state);
+        addTraceEvent(
+            state.trace,
+            {
+                type: "agent",
+                name: "agent.run",
+                status: "failed",
+                metadata: {
+                    conversationId:
+                        state.conversationId,
 
-    buildPrompt(state);
+                    error:
+                        error.message,
+                },
+            }
+        );
 
-    serializePrompt(state);
-
-    await generateLLMResponse(state);
-
-    await saveConversationMemory(state);
-
-    return buildResponse(state);
+        throw error;
+    }
 }
