@@ -1,5 +1,7 @@
 import crypto from "crypto";
 
+import { createTrace } from "../observability/trace.service.js";
+
 export function createAgentState({
       requestId,
     message,
@@ -43,5 +45,7 @@ export function createAgentState({
         metadata: {
             startedAt: Date.now(),
         },
+
+        trace: createTrace(),
     };
 }
