@@ -189,8 +189,8 @@ POST {{baseUrl}}/ai/chat/agentic-ai
 Content-Type: application/json
 
 {
-    "message": "are you a google gemini?",
-    "conversationId": "7515bb8b-254b-45c9-9f2e-00efb60b6b9c"
+    "message": "hello can you show me the repo of bikram?"
+    
     
     
 }
