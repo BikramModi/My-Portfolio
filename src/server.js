@@ -9,6 +9,8 @@ import cookieParser from "cookie-parser";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 
+import { requestIdMiddleware } from "./middlerwares/request-id.middleware.js";
+
 const SERVER = express();
 
 SERVER.set("trust proxy", 1);
@@ -27,6 +29,8 @@ SERVER.use(
 SERVER.use(express.json());
 
 SERVER.use(cookieParser());
+
+SERVER.use(requestIdMiddleware);
 
 SERVER.use(authMiddleware);
 SERVER.use("/", HANDLERS);

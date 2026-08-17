@@ -23,6 +23,7 @@ export async function runAgent({
     message,
     user,
     conversationId,
+    requestId,
 }) {
     const activeConversationId =
         conversationId ??
@@ -34,6 +35,7 @@ export async function runAgent({
             user,
             conversationId:
                 activeConversationId,
+            requestId,
         });
 
     const agentEvent =
@@ -45,6 +47,9 @@ export async function runAgent({
                 metadata: {
                     conversationId:
                         state.conversationId,
+
+                    requestId:
+                        state.requestId,
                 },
             }
         );

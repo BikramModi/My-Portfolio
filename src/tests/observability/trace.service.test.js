@@ -267,6 +267,27 @@ describe(
         );
 
 
+        it(
+            "should associate a trace with a request ID",
+            () => {
+                const trace =
+                    createTrace(
+                        "request-123"
+                    );
+
+                expect(
+                    trace.requestId
+                ).toBe(
+                    "request-123"
+                );
+
+                expect(
+                    trace.runId
+                ).toBeDefined();
+            }
+        );
+
+
 
 
     }

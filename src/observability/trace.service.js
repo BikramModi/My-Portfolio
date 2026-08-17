@@ -1,9 +1,11 @@
 import crypto from "crypto";
 
-export function createTrace() {
+export function createTrace( requestId = null ) {
     return {
         runId:
             crypto.randomUUID(),
+
+        requestId,
 
         startedAt:
             new Date(),
