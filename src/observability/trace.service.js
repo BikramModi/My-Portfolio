@@ -143,3 +143,61 @@ export function completeTraceEvent(
 
     return event;
 }
+
+export function recordTraceError(
+    trace,
+    {
+        type = "agent",
+        name = "agent.error",
+        error,
+        metadata = {},
+    }
+) {
+    if (!trace) {
+        throw new Error(
+            "Trace is required."
+        );
+    }
+
+    if (!error) {
+        throw new Error(
+            "Error is required."
+        );
+    }
+
+    const event = {
+        eventId:
+            crypto.randomUUID(),
+
+        type,
+
+        name,
+
+        status: "failed",
+
+        startedAt:
+            new Date(),
+
+        completedAt:
+            new Date(),
+
+        durationMs:
+            0,
+
+        metadata: {
+            ...metadata,
+
+            error: {
+                name:
+                    error.name,
+
+                message:
+                    error.message,
+            },
+        },
+    };
+
+    trace.events.push(event);
+
+    return event;
+}
