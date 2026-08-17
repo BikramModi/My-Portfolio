@@ -9,6 +9,7 @@ import {
     addTraceEvent,
     startTraceEvent,
     completeTraceEvent,
+    recordTraceError,
 } from "../../../src/observability/trace.service.js";
 
 describe(
@@ -174,6 +175,99 @@ describe(
                 );
             }
         );
+
+        it(
+            "should record an agent error",
+            () => {
+                const trace =
+                    createTrace();
+
+                const error =
+                    new Error(
+                        "Something failed"
+                    );
+
+                const event =
+                    recordTraceError(
+                        trace,
+                        {
+                            type: "agent",
+                            name: "agent.error",
+                            error,
+                            metadata: {
+                                conversationId:
+                                    "conversation-1",
+                            },
+                        }
+                    );
+
+                expect(
+                    event.eventId
+                ).toBeDefined();
+
+                expect(
+                    event.type
+                ).toBe("agent");
+
+                expect(
+                    event.name
+                ).toBe(
+                    "agent.error"
+                );
+
+                expect(
+                    event.status
+                ).toBe("failed");
+
+                expect(
+                    event.metadata
+                        .conversationId
+                ).toBe(
+                    "conversation-1"
+                );
+
+                expect(
+                    event.metadata
+                        .error.name
+                ).toBe("Error");
+
+                expect(
+                    event.metadata
+                        .error.message
+                ).toBe(
+                    "Something failed"
+                );
+            }
+        );
+
+
+        it(
+            "should not store the error stack",
+            () => {
+                const trace =
+                    createTrace();
+
+                const error =
+                    new Error(
+                        "Sensitive failure"
+                    );
+
+                const event =
+                    recordTraceError(
+                        trace,
+                        {
+                            error,
+                        }
+                    );
+
+                expect(
+                    event.metadata.error.stack
+                ).toBeUndefined();
+            }
+        );
+
+
+
 
     }
 );

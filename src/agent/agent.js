@@ -7,7 +7,7 @@ import { serializePrompt } from "../prompt/prompt-serializer.js";
 import { buildResponse } from "./response.js";
 import { generateLLMResponse } from "../llm/llm-router.js";
 
-import { startTraceEvent, completeTraceEvent } from "../observability/trace.service.js";
+import { startTraceEvent, completeTraceEvent, recordTraceError } from "../observability/trace.service.js";
 
 import {
     memoryManager,
@@ -50,58 +50,58 @@ export async function runAgent({
         );
 
     try {
-        
+
         const memoryLoadEvent =
-    startTraceEvent(
-        state.trace,
-        {
-            type: "memory",
-            name: "memory.load",
-            metadata: {
-                conversationId:
-                    state.conversationId,
+            startTraceEvent(
+                state.trace,
+                {
+                    type: "memory",
+                    name: "memory.load",
+                    metadata: {
+                        conversationId:
+                            state.conversationId,
 
-                limit:
-                    MEMORY_LIMITS.maxMessages,
-            },
-        }
-    );
-
-try {
-    state.memory.messages =
-        await memoryManager
-            .getRecentMessages(
-                activeConversationId,
-                MEMORY_LIMITS.maxMessages
+                        limit:
+                            MEMORY_LIMITS.maxMessages,
+                    },
+                }
             );
 
-    completeTraceEvent(
-        state.trace,
-        memoryLoadEvent.eventId,
-        {
-            status: "completed",
-            metadata: {
-                messageCount:
-                    state.memory.messages.length,
-            },
-        }
-    );
+        try {
+            state.memory.messages =
+                await memoryManager
+                    .getRecentMessages(
+                        activeConversationId,
+                        MEMORY_LIMITS.maxMessages
+                    );
 
-} catch (error) {
-    completeTraceEvent(
-        state.trace,
-        memoryLoadEvent.eventId,
-        {
-            status: "failed",
-            metadata: {
-                error:
-                    error.message,
-            },
-        }
-    );
+            completeTraceEvent(
+                state.trace,
+                memoryLoadEvent.eventId,
+                {
+                    status: "completed",
+                    metadata: {
+                        messageCount:
+                            state.memory.messages.length,
+                    },
+                }
+            );
 
-    throw error;
-}
+        } catch (error) {
+            completeTraceEvent(
+                state.trace,
+                memoryLoadEvent.eventId,
+                {
+                    status: "failed",
+                    metadata: {
+                        error:
+                            error.message,
+                    },
+                }
+            );
+
+            throw error;
+        }
 
         await buildContext(state);
 
@@ -117,46 +117,46 @@ try {
         await generateLLMResponse(state);
 
         const memorySaveEvent =
-    startTraceEvent(
-        state.trace,
-        {
-            type: "memory",
-            name: "memory.save",
-            metadata: {
-                conversationId:
-                    state.conversationId,
-            },
+            startTraceEvent(
+                state.trace,
+                {
+                    type: "memory",
+                    name: "memory.save",
+                    metadata: {
+                        conversationId:
+                            state.conversationId,
+                    },
+                }
+            );
+
+        try {
+            await saveConversationMemory(
+                state
+            );
+
+            completeTraceEvent(
+                state.trace,
+                memorySaveEvent.eventId,
+                {
+                    status: "completed",
+                }
+            );
+
+        } catch (error) {
+            completeTraceEvent(
+                state.trace,
+                memorySaveEvent.eventId,
+                {
+                    status: "failed",
+                    metadata: {
+                        error:
+                            error.message,
+                    },
+                }
+            );
+
+            throw error;
         }
-    );
-
-try {
-    await saveConversationMemory(
-        state
-    );
-
-    completeTraceEvent(
-        state.trace,
-        memorySaveEvent.eventId,
-        {
-            status: "completed",
-        }
-    );
-
-} catch (error) {
-    completeTraceEvent(
-        state.trace,
-        memorySaveEvent.eventId,
-        {
-            status: "failed",
-            metadata: {
-                error:
-                    error.message,
-            },
-        }
-    );
-
-    throw error;
-}
 
         completeTraceEvent(
             state.trace,
@@ -167,17 +167,39 @@ try {
 
     } catch (error) {
 
-        completeTraceEvent(
+        recordTraceError(
             state.trace,
-            agentEvent.eventId,
             {
-                status: "failed",
+                type: "agent",
+                name: "agent.error",
+                error,
                 metadata: {
-                    error:
-                        error.message,
+                    conversationId:
+                        state.conversationId,
                 },
             }
         );
+
+        const currentAgentEvent =
+            state.trace.events.find(
+                ({ eventId }) =>
+                    eventId ===
+                    agentEvent.eventId
+            );
+
+        if (
+            currentAgentEvent &&
+            currentAgentEvent.status ===
+            "started"
+        ) {
+            completeTraceEvent(
+                state.trace,
+                agentEvent.eventId,
+                {
+                    status: "failed",
+                }
+            );
+        }
 
         throw error;
     }
