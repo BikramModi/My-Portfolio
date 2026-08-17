@@ -50,12 +50,58 @@ export async function runAgent({
         );
 
     try {
-        state.memory.messages =
-            await memoryManager
-                .getRecentMessages(
-                    activeConversationId,
-                    MEMORY_LIMITS.maxMessages
-                );
+        
+        const memoryLoadEvent =
+    startTraceEvent(
+        state.trace,
+        {
+            type: "memory",
+            name: "memory.load",
+            metadata: {
+                conversationId:
+                    state.conversationId,
+
+                limit:
+                    MEMORY_LIMITS.maxMessages,
+            },
+        }
+    );
+
+try {
+    state.memory.messages =
+        await memoryManager
+            .getRecentMessages(
+                activeConversationId,
+                MEMORY_LIMITS.maxMessages
+            );
+
+    completeTraceEvent(
+        state.trace,
+        memoryLoadEvent.eventId,
+        {
+            status: "completed",
+            metadata: {
+                messageCount:
+                    state.memory.messages.length,
+            },
+        }
+    );
+
+} catch (error) {
+    completeTraceEvent(
+        state.trace,
+        memoryLoadEvent.eventId,
+        {
+            status: "failed",
+            metadata: {
+                error:
+                    error.message,
+            },
+        }
+    );
+
+    throw error;
+}
 
         await buildContext(state);
 
@@ -70,7 +116,47 @@ export async function runAgent({
 
         await generateLLMResponse(state);
 
-        await saveConversationMemory(state);
+        const memorySaveEvent =
+    startTraceEvent(
+        state.trace,
+        {
+            type: "memory",
+            name: "memory.save",
+            metadata: {
+                conversationId:
+                    state.conversationId,
+            },
+        }
+    );
+
+try {
+    await saveConversationMemory(
+        state
+    );
+
+    completeTraceEvent(
+        state.trace,
+        memorySaveEvent.eventId,
+        {
+            status: "completed",
+        }
+    );
+
+} catch (error) {
+    completeTraceEvent(
+        state.trace,
+        memorySaveEvent.eventId,
+        {
+            status: "failed",
+            metadata: {
+                error:
+                    error.message,
+            },
+        }
+    );
+
+    throw error;
+}
 
         completeTraceEvent(
             state.trace,
