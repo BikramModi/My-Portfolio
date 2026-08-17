@@ -3,7 +3,7 @@
 import { createTrace } from "../observability/trace.service.js";
 
 export function createAgentState({
-      requestId,
+    requestId,
     message,
     user = null,
     conversationId = null,
@@ -46,6 +46,6 @@ export function createAgentState({
             startedAt: Date.now(),
         },
 
-        trace: createTrace(),
+        trace: createTrace( requestId ),
     };
 }
