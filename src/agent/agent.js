@@ -19,6 +19,17 @@ import {
     MEMORY_LIMITS,
 } from "../memory/memory-limit.config.js";
 
+import {
+    logAgentStart,
+    logAgentComplete,
+    logAgentError,
+} from "../observability/agent-logger.js";
+
+import {
+    logInfo,
+    logError,
+} from "../observability/logger.js";
+
 export async function runAgent({
     message,
     user,
@@ -37,6 +48,8 @@ export async function runAgent({
                 activeConversationId,
             requestId,
         });
+
+    logAgentStart(state);
 
     const agentEvent =
         startTraceEvent(
@@ -92,7 +105,47 @@ export async function runAgent({
                 }
             );
 
+            logInfo(
+                "Agent memory loaded",
+                {
+                    event:
+                        "memory.loaded",
+
+                    requestId:
+                        state.requestId,
+
+                    runId:
+                        state.trace?.runId,
+
+                    messageCount:
+                        state.memory.messages.length,
+                }
+            );
+
         } catch (error) {
+
+            logError(
+                "Agent memory load failed",
+                {
+                    event:
+                        "memory.failed",
+
+                    requestId:
+                        state.requestId,
+
+                    runId:
+                        state.trace?.runId,
+
+                    error: {
+                        name:
+                            error.name,
+
+                        message:
+                            error.message,
+                    },
+                }
+            );
+
             completeTraceEvent(
                 state.trace,
                 memoryLoadEvent.eventId,
@@ -147,7 +200,45 @@ export async function runAgent({
                 }
             );
 
+            logInfo(
+                "Agent memory saved",
+                {
+                    event:
+                        "memory.saved",
+
+                    requestId:
+                        state.requestId,
+
+                    runId:
+                        state.trace?.runId,
+                }
+            );
+
         } catch (error) {
+
+
+            logError(
+                "Agent memory save failed",
+                {
+                    event:
+                        "memory.failed",
+
+                    requestId:
+                        state.requestId,
+
+                    runId:
+                        state.trace?.runId,
+
+                    error: {
+                        name:
+                            error.name,
+
+                        message:
+                            error.message,
+                    },
+                }
+            );
+
             completeTraceEvent(
                 state.trace,
                 memorySaveEvent.eventId,
@@ -168,9 +259,13 @@ export async function runAgent({
             agentEvent.eventId
         );
 
+        logAgentComplete(state);
+
         return buildResponse(state);
 
     } catch (error) {
+
+        logAgentError(state, error);
 
         recordTraceError(
             state.trace,
