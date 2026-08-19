@@ -5,6 +5,11 @@ import {
     completeTraceEvent,
 } from "../observability/trace.service.js";
 
+import {
+    logInfo,
+    logError,
+} from "../observability/logger.js";
+
 export async function executePlan(state) {
     const results = [];
 
@@ -47,7 +52,50 @@ export async function executePlan(state) {
                 }
             );
 
+            logInfo(
+                "Agent tool completed",
+                {
+                    event:
+                        "tool.completed",
+
+                    tool:
+                        toolName,
+
+                    requestId:
+                        state.requestId,
+
+                    runId:
+                        state.trace?.runId,
+                }
+            );
+
         } catch (error) {
+
+            logError(
+                "Agent tool failed",
+                {
+                    event:
+                        "tool.failed",
+
+                    tool:
+                        toolName,
+
+                    requestId:
+                        state.requestId,
+
+                    runId:
+                        state.trace?.runId,
+
+                    error: {
+                        name:
+                            error.name,
+
+                        message:
+                            error.message,
+                    },
+                }
+            );
+
             completeTraceEvent(
                 state.trace,
                 toolEvent.eventId,

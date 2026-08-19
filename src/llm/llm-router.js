@@ -5,6 +5,11 @@ import {
     completeTraceEvent,
 } from "../observability/trace.service.js";
 
+import {
+    logInfo,
+    logError,
+} from "../observability/logger.js";
+
 export async function generateLLMResponse(state) {
     const provider =
         process.env.AI_PROVIDER;
@@ -41,9 +46,49 @@ export async function generateLLMResponse(state) {
             }
         );
 
+        logInfo(
+            "LLM generation completed",
+            {
+                event:
+                    "llm.completed",
+
+                provider,
+
+                requestId:
+                    state.requestId,
+
+                runId:
+                    state.trace?.runId,
+            }
+        );
+
         return state;
 
     } catch (error) {
+
+        logError(
+            "LLM generation failed",
+            {
+                event:
+                    "llm.failed",
+
+                provider,
+
+                requestId:
+                    state.requestId,
+
+                runId:
+                    state.trace?.runId,
+
+                error: {
+                    name:
+                        error.name,
+
+                    message:
+                        error.message,
+                },
+            }
+        );
 
         completeTraceEvent(
             state.trace,
