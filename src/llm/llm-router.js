@@ -10,6 +10,12 @@ import {
     logError,
 } from "../observability/logger.js";
 
+import {
+    recordLLMRequest,
+    recordLLMFailed,
+    recordLLMDuration,
+} from "../observability/agent-metrics.js";
+
 export async function generateLLMResponse(state) {
     const provider =
         process.env.AI_PROVIDER;
@@ -27,6 +33,9 @@ export async function generateLLMResponse(state) {
         );
 
     try {
+
+        recordLLMRequest();
+
         const response =
             await generateAIResponse(
                 state.serializedPrompt
@@ -38,12 +47,18 @@ export async function generateLLMResponse(state) {
         state.answer =
             response;
 
-        completeTraceEvent(
-            state.trace,
-            llmEvent.eventId,
-            {
-                status: "completed",
-            }
+        const completedEvent =
+            completeTraceEvent(
+                state.trace,
+                llmEvent.eventId,
+                {
+                    status:
+                        "completed",
+                }
+            );
+
+        recordLLMDuration(
+            completedEvent.durationMs
         );
 
         logInfo(
@@ -65,6 +80,8 @@ export async function generateLLMResponse(state) {
         return state;
 
     } catch (error) {
+
+        recordLLMFailed();
 
         logError(
             "LLM generation failed",
@@ -90,16 +107,23 @@ export async function generateLLMResponse(state) {
             }
         );
 
-        completeTraceEvent(
-            state.trace,
-            llmEvent.eventId,
-            {
-                status: "failed",
-                metadata: {
-                    error:
-                        error.message,
-                },
-            }
+        const failedEvent =
+            completeTraceEvent(
+                state.trace,
+                llmEvent.eventId,
+                {
+                    status:
+                        "failed",
+
+                    metadata: {
+                        error:
+                            error.message,
+                    },
+                }
+            );
+
+        recordLLMDuration(
+            failedEvent.durationMs
         );
 
         throw error;

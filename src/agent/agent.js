@@ -30,6 +30,17 @@ import {
     logError,
 } from "../observability/logger.js";
 
+import {
+    recordAgentStarted,
+    recordAgentCompleted,
+    recordAgentFailed,
+    recordAgentDuration,
+    recordMemoryLoad,
+    recordMemorySave,
+    recordMemoryLoadDuration,
+    recordMemorySaveDuration,
+} from "../observability/agent-metrics.js";
+
 export async function runAgent({
     message,
     user,
@@ -48,6 +59,8 @@ export async function runAgent({
                 activeConversationId,
             requestId,
         });
+
+    recordAgentStarted();
 
     logAgentStart(state);
 
@@ -68,6 +81,8 @@ export async function runAgent({
         );
 
     try {
+
+        recordMemoryLoad();
 
         const memoryLoadEvent =
             startTraceEvent(
@@ -93,16 +108,25 @@ export async function runAgent({
                         MEMORY_LIMITS.maxMessages
                     );
 
-            completeTraceEvent(
-                state.trace,
-                memoryLoadEvent.eventId,
-                {
-                    status: "completed",
-                    metadata: {
-                        messageCount:
-                            state.memory.messages.length,
-                    },
-                }
+            const completedEvent =
+                completeTraceEvent(
+                    state.trace,
+                    memoryLoadEvent.eventId,
+                    {
+                        status:
+                            "completed",
+
+                        metadata: {
+                            messageCount:
+                                state.memory
+                                    .messages
+                                    .length,
+                        },
+                    }
+                );
+
+            recordMemoryLoadDuration(
+                completedEvent.durationMs
             );
 
             logInfo(
@@ -123,6 +147,20 @@ export async function runAgent({
             );
 
         } catch (error) {
+
+            const failedMemoryLoad = completeTraceEvent(
+                state.trace,
+                memoryLoadEvent.eventId,
+                {
+                    status: "failed",
+                    metadata: {
+                        error:
+                            error.message,
+                    },
+                }
+            );
+
+            recordMemoryLoadDuration(failedMemoryLoad.durationMs);
 
             logError(
                 "Agent memory load failed",
@@ -146,17 +184,7 @@ export async function runAgent({
                 }
             );
 
-            completeTraceEvent(
-                state.trace,
-                memoryLoadEvent.eventId,
-                {
-                    status: "failed",
-                    metadata: {
-                        error:
-                            error.message,
-                    },
-                }
-            );
+
 
             throw error;
         }
@@ -173,6 +201,8 @@ export async function runAgent({
         serializePrompt(state);
 
         await generateLLMResponse(state);
+
+        recordMemorySave();
 
         const memorySaveEvent =
             startTraceEvent(
@@ -192,13 +222,15 @@ export async function runAgent({
                 state
             );
 
-            completeTraceEvent(
+            const completedMemorySave = completeTraceEvent(
                 state.trace,
                 memorySaveEvent.eventId,
                 {
                     status: "completed",
                 }
             );
+
+            recordMemorySaveDuration(completedMemorySave.durationMs);
 
             logInfo(
                 "Agent memory saved",
@@ -215,6 +247,20 @@ export async function runAgent({
             );
 
         } catch (error) {
+
+            const failedMemorySave = completeTraceEvent(
+                state.trace,
+                memorySaveEvent.eventId,
+                {
+                    status: "failed",
+                    metadata: {
+                        error:
+                            error.message,
+                    },
+                }
+            );
+
+            recordMemorySaveDuration(failedMemorySave.durationMs);
 
 
             logError(
@@ -239,24 +285,21 @@ export async function runAgent({
                 }
             );
 
-            completeTraceEvent(
-                state.trace,
-                memorySaveEvent.eventId,
-                {
-                    status: "failed",
-                    metadata: {
-                        error:
-                            error.message,
-                    },
-                }
-            );
+
 
             throw error;
         }
 
-        completeTraceEvent(
-            state.trace,
-            agentEvent.eventId
+        const completedAgentEvent =
+            completeTraceEvent(
+                state.trace,
+                agentEvent.eventId,
+            );
+
+        recordAgentCompleted();
+
+        recordAgentDuration(
+            completedAgentEvent.durationMs
         );
 
         logAgentComplete(state);
@@ -264,6 +307,8 @@ export async function runAgent({
         return buildResponse(state);
 
     } catch (error) {
+
+        recordAgentFailed();
 
         logAgentError(state, error);
 
@@ -292,13 +337,22 @@ export async function runAgent({
             currentAgentEvent.status ===
             "started"
         ) {
-            completeTraceEvent(
-                state.trace,
-                agentEvent.eventId,
-                {
-                    status: "failed",
-                }
-            );
+            const failedAgentEvent =
+                completeTraceEvent(
+                    state.trace,
+                    agentEvent.eventId,
+                    {
+                        status: "failed",
+                    }
+                );
+
+            if (
+                failedAgentEvent
+            ) {
+                recordAgentDuration(
+                    failedAgentEvent.durationMs
+                );
+            }
         }
 
         throw error;

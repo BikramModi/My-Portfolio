@@ -10,6 +10,11 @@ import {
     logError,
 } from "../observability/logger.js";
 
+import {
+    recordToolExecuted,
+    recordToolFailed,
+} from "../observability/agent-metrics.js";
+
 export async function executePlan(state) {
     const results = [];
 
@@ -52,6 +57,8 @@ export async function executePlan(state) {
                 }
             );
 
+            recordToolExecuted();
+
             logInfo(
                 "Agent tool completed",
                 {
@@ -70,6 +77,21 @@ export async function executePlan(state) {
             );
 
         } catch (error) {
+
+
+            completeTraceEvent(
+                state.trace,
+                toolEvent.eventId,
+                {
+                    status: "failed",
+                    metadata: {
+                        error:
+                            error.message,
+                    },
+                }
+            );
+
+            recordToolFailed();
 
             logError(
                 "Agent tool failed",
@@ -96,17 +118,7 @@ export async function executePlan(state) {
                 }
             );
 
-            completeTraceEvent(
-                state.trace,
-                toolEvent.eventId,
-                {
-                    status: "failed",
-                    metadata: {
-                        error:
-                            error.message,
-                    },
-                }
-            );
+
 
             throw error;
         }
