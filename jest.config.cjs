@@ -1,13 +1,24 @@
 module.exports = {
-  testEnvironment: "node",
-  testEnvironmentOptions: {
-    localStorage: undefined,
-  },
-  transform: {
-    "^.+\\.js$": "babel-jest",
-  },
-  setupFilesAfterEnv: ["<rootDir>/src/tests/setup.js"],
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true,
+    testEnvironment: "node",
+
+    testEnvironmentOptions: {
+        localStorage: undefined,
+    },
+
+    transform: {
+        "^.+\\.js$": [
+            "babel-jest",
+            {
+                configFile: "./babel.config.js",
+            },
+        ],
+    },
+
+    setupFilesAfterEnv: [
+        "<rootDir>/src/tests/setup.js",
+    ],
+
+    clearMocks: false,
+    resetMocks: false,
+    restoreMocks: true,
 };
