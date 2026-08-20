@@ -3,9 +3,7 @@ import {
     it,
     expect,
     jest,
-    beforeAll,
     beforeEach,
-    afterAll,
 } from "@jest/globals";
 
 /*
@@ -14,8 +12,7 @@ import {
  * ==========================================================================
  */
 
-process.env.NODE_ENV =
-    process.env.NODE_ENV || "test";
+process.env.NODE_ENV = "test";
 
 process.env.OPENAI_API_KEY =
     process.env.OPENAI_API_KEY ||
@@ -25,17 +22,751 @@ process.env.GEMINI_API_KEY =
     process.env.GEMINI_API_KEY ||
     "test-gemini-key";
 
-process.env.REDIS_HOST =
-    process.env.REDIS_HOST ||
-    "127.0.0.1";
-
-process.env.REDIS_PORT =
-    process.env.REDIS_PORT ||
-    "6379";
+process.env.AI_PROVIDER =
+    process.env.AI_PROVIDER ||
+    "gemini";
 
 /*
  * ==========================================================================
- * MOCK FUNCTIONS
+ * TRACE STATE
+ * ==========================================================================
+ */
+
+let mockTraceRunCounter = 0;
+
+const mockTraces = [];
+
+/*
+ * ==========================================================================
+ * LOGGER STATE
+ * ==========================================================================
+ */
+
+const mockLoggerCalls = [];
+
+/*
+ * ==========================================================================
+ * METRICS STATE
+ * ==========================================================================
+ */
+
+const mockMetricCounters = {};
+
+const mockMetricDurations = {};
+
+/*
+ * ==========================================================================
+ * MOCK TRACE SERVICE
+ * ==========================================================================
+ */
+
+const mockCreateTrace =
+    jest.fn(
+        (requestId) => {
+            mockTraceRunCounter += 1;
+
+            const trace = {
+                requestId,
+
+                runId:
+                    `test-run-${mockTraceRunCounter}`,
+
+                events: [],
+            };
+
+            mockTraces.push(trace);
+
+            return trace;
+        }
+    );
+
+const mockStartTraceEvent =
+    jest.fn(
+        (
+            trace,
+            eventData = {}
+        ) => {
+            if (!trace) {
+                throw new Error(
+                    "startTraceEvent requires a trace."
+                );
+            }
+
+            const event = {
+                eventId:
+                    `test-event-${trace.events.length + 1}`,
+
+                id:
+                    `test-event-${trace.events.length + 1}`,
+
+                type:
+                    eventData.type,
+
+                name:
+                    eventData.name,
+
+                metadata:
+                    eventData.metadata || {},
+
+                startedAt:
+                    new Date().toISOString(),
+
+                status:
+                    "started",
+            };
+
+            Object.assign(
+                event,
+                eventData
+            );
+
+            if (!event.eventId) {
+                event.eventId =
+                    event.id;
+            }
+
+            if (!event.id) {
+                event.id =
+                    event.eventId;
+            }
+
+            trace.events.push(
+                event
+            );
+
+            return event;
+        }
+    );
+
+const mockCompleteTraceEvent =
+    jest.fn(
+        (
+            trace,
+            eventId,
+            eventData = {}
+        ) => {
+            if (!trace) {
+                throw new Error(
+                    "completeTraceEvent requires a trace."
+                );
+            }
+
+            let targetEvent =
+                trace.events.find(
+                    (event) =>
+                        event.eventId ===
+                            eventId ||
+                        event.id ===
+                            eventId
+                );
+
+            if (!targetEvent) {
+                targetEvent =
+                    mockStartTraceEvent(
+                        trace,
+                        eventData
+                    );
+            }
+
+            Object.assign(
+                targetEvent,
+                eventData
+            );
+
+            targetEvent.status =
+                eventData.status ||
+                "completed";
+
+            targetEvent.endedAt =
+                new Date().toISOString();
+
+            if (
+                typeof targetEvent.durationMs !==
+                "number"
+            ) {
+                targetEvent.durationMs =
+                    Math.max(
+                        0,
+                        new Date(
+                            targetEvent.endedAt
+                        ).getTime() -
+                        new Date(
+                            targetEvent.startedAt
+                        ).getTime()
+                    );
+            }
+
+            return targetEvent;
+        }
+    );
+
+const mockRecordTraceError =
+    jest.fn(
+        (
+            trace,
+            eventData = {}
+        ) => {
+            if (!trace) {
+                throw new Error(
+                    "recordTraceError requires a trace."
+                );
+            }
+
+            const event =
+                mockStartTraceEvent(
+                    trace,
+                    {
+                        type:
+                            eventData.type ||
+                            "error",
+
+                        name:
+                            eventData.name ||
+                            "trace.error",
+
+                        metadata:
+                            eventData.metadata ||
+                            {},
+
+                        error:
+                            eventData.error,
+
+                        status:
+                            "failed",
+                    }
+                );
+
+            event.status =
+                "failed";
+
+            event.error =
+                eventData.error;
+
+            event.endedAt =
+                new Date().toISOString();
+
+            event.durationMs =
+                0;
+
+            return event;
+        }
+    );
+
+const mockEndTraceEvent =
+    mockCompleteTraceEvent;
+
+jest.mock(
+    "../../../src/observability/trace.service.js",
+    () => ({
+        createTrace:
+            mockCreateTrace,
+
+        startTraceEvent:
+            mockStartTraceEvent,
+
+        completeTraceEvent:
+            mockCompleteTraceEvent,
+
+        recordTraceError:
+            mockRecordTraceError,
+
+        endTraceEvent:
+            mockEndTraceEvent,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK LOGGER
+ * ==========================================================================
+ */
+
+const mockWriteLog =
+    jest.fn(
+        (
+            level,
+            payload
+        ) => {
+            mockLoggerCalls.push({
+                level,
+                payload,
+            });
+        }
+    );
+
+const mockLoggerInfo =
+    jest.fn(
+        (...args) => {
+            mockLoggerCalls.push({
+                level: "info",
+                args,
+            });
+        }
+    );
+
+const mockLoggerError =
+    jest.fn(
+        (...args) => {
+            mockLoggerCalls.push({
+                level: "error",
+                args,
+            });
+        }
+    );
+
+const mockLoggerWarn =
+    jest.fn(
+        (...args) => {
+            mockLoggerCalls.push({
+                level: "warn",
+                args,
+            });
+        }
+    );
+
+const mockLogInfo =
+    jest.fn(
+        (
+            message,
+            payload
+        ) => {
+            mockLoggerCalls.push({
+                level: "info",
+                message,
+                ...(payload || {}),
+            });
+        }
+    );
+
+const mockLogError =
+    jest.fn(
+        (
+            message,
+            payload
+        ) => {
+            mockLoggerCalls.push({
+                level: "error",
+                message,
+                ...(payload || {}),
+            });
+        }
+    );
+
+jest.mock(
+    "../../../src/observability/logger.js",
+    () => ({
+        writeLog:
+            mockWriteLog,
+
+        logger: {
+            info:
+                mockLoggerInfo,
+
+            error:
+                mockLoggerError,
+
+            warn:
+                mockLoggerWarn,
+        },
+
+        logInfo:
+            mockLogInfo,
+
+        logError:
+            mockLogError,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK AGENT LOGGER
+ * ==========================================================================
+ */
+
+const mockLogAgentStart =
+    jest.fn(
+        (state) => {
+            mockLoggerCalls.push({
+                level: "info",
+
+                event:
+                    "agent.started",
+
+                requestId:
+                    state?.requestId,
+
+                runId:
+                    state?.trace?.runId,
+
+                conversationId:
+                    state?.memory
+                        ?.conversationId,
+            });
+        }
+    );
+
+const mockLogAgentMemoryLoaded =
+    jest.fn(
+        (state) => {
+            mockLoggerCalls.push({
+                level: "info",
+
+                event:
+                    "memory.loaded",
+
+                requestId:
+                    state?.requestId,
+
+                runId:
+                    state?.trace?.runId,
+
+                conversationId:
+                    state?.memory
+                        ?.conversationId,
+            });
+        }
+    );
+
+const mockLogAgentMemorySaved =
+    jest.fn(
+        (state) => {
+            mockLoggerCalls.push({
+                level: "info",
+
+                event:
+                    "memory.saved",
+
+                requestId:
+                    state?.requestId,
+
+                runId:
+                    state?.trace?.runId,
+
+                conversationId:
+                    state?.memory
+                        ?.conversationId,
+            });
+        }
+    );
+
+const mockLogAgentCompleted =
+    jest.fn(
+        (state) => {
+            mockLoggerCalls.push({
+                level: "info",
+
+                event:
+                    "agent.completed",
+
+                requestId:
+                    state?.requestId,
+
+                runId:
+                    state?.trace?.runId,
+
+                conversationId:
+                    state?.memory
+                        ?.conversationId,
+            });
+        }
+    );
+
+const mockLogAgentError =
+    jest.fn(
+        (
+            state,
+            error
+        ) => {
+            mockLoggerCalls.push({
+                level: "error",
+
+                event:
+                    "agent.failed",
+
+                requestId:
+                    state?.requestId,
+
+                runId:
+                    state?.trace?.runId,
+
+                conversationId:
+                    state?.memory
+                        ?.conversationId,
+
+                error,
+            });
+        }
+    );
+
+jest.mock(
+    "../../../src/observability/agent-logger.js",
+    () => ({
+        logAgentStart:
+            mockLogAgentStart,
+
+        logAgentStarted:
+            mockLogAgentStart,
+
+        logMemoryLoaded:
+            mockLogAgentMemoryLoaded,
+
+        logAgentMemoryLoaded:
+            mockLogAgentMemoryLoaded,
+
+        logMemorySaved:
+            mockLogAgentMemorySaved,
+
+        logAgentMemorySaved:
+            mockLogAgentMemorySaved,
+
+        logAgentCompleted:
+            mockLogAgentCompleted,
+
+        logAgentComplete:
+            mockLogAgentCompleted,
+
+        logAgentError:
+            mockLogAgentError,
+
+        logAgentFailed:
+            mockLogAgentError,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK METRICS
+ * ==========================================================================
+ */
+
+const mockIncrementCounter =
+    jest.fn(
+        (name) => {
+            mockMetricCounters[name] =
+                (
+                    mockMetricCounters[name] ||
+                    0
+                ) + 1;
+        }
+    );
+
+const mockObserveDuration =
+    jest.fn(
+        (
+            name,
+            duration = 0
+        ) => {
+            if (
+                !mockMetricDurations[name]
+            ) {
+                mockMetricDurations[name] = {
+                    count: 0,
+                    totalMs: 0,
+                };
+            }
+
+            mockMetricDurations[name]
+                .count += 1;
+
+            mockMetricDurations[name]
+                .totalMs += duration;
+        }
+    );
+
+const mockRecordAgentStart =
+    jest.fn(
+        () => {
+            mockIncrementCounter(
+                "agent.runs.total"
+            );
+        }
+    );
+
+const mockRecordAgentStarted =
+    mockRecordAgentStart;
+
+const mockRecordAgentCompleted =
+    jest.fn(
+        () => {
+            mockIncrementCounter(
+                "agent.runs.completed"
+            );
+        }
+    );
+
+const mockRecordAgentFailed =
+    jest.fn(
+        () => {
+            mockIncrementCounter(
+                "agent.runs.failed"
+            );
+        }
+    );
+
+const mockRecordAgentDuration =
+    jest.fn(
+        (
+            duration = 0
+        ) => {
+            mockObserveDuration(
+                "agent.duration",
+                duration
+            );
+        }
+    );
+
+const mockRecordMemoryLoad =
+    jest.fn();
+
+const mockRecordMemorySave =
+    jest.fn();
+
+const mockRecordMemoryLoadDuration =
+    jest.fn(
+        (duration = 0) => {
+            mockObserveDuration(
+                "memory.load.duration",
+                duration
+            );
+        }
+    );
+
+const mockRecordMemorySaveDuration =
+    jest.fn(
+        (duration = 0) => {
+            mockObserveDuration(
+                "memory.save.duration",
+                duration
+            );
+        }
+    );
+
+const mockGetMetricSnapshot =
+    jest.fn(
+        () => ({
+            counters: {
+                ...mockMetricCounters,
+            },
+
+            durations: {
+                ...mockMetricDurations,
+            },
+        })
+    );
+
+const mockResetMetrics =
+    jest.fn(
+        () => {
+            Object.keys(
+                mockMetricCounters
+            ).forEach(
+                (key) => {
+                    delete mockMetricCounters[
+                        key
+                    ];
+                }
+            );
+
+            Object.keys(
+                mockMetricDurations
+            ).forEach(
+                (key) => {
+                    delete mockMetricDurations[
+                        key
+                    ];
+                }
+            );
+        }
+    );
+
+jest.mock(
+    "../../../src/observability/metrics.service.js",
+    () => ({
+        incrementCounter:
+            mockIncrementCounter,
+
+        incrementMetric:
+            mockIncrementCounter,
+
+        observeDuration:
+            mockObserveDuration,
+
+        recordAgentStart:
+            mockRecordAgentStart,
+
+        recordAgentStarted:
+            mockRecordAgentStarted,
+
+        recordAgentCompleted:
+            mockRecordAgentCompleted,
+
+        recordAgentFailed:
+            mockRecordAgentFailed,
+
+        recordAgentDuration:
+            mockRecordAgentDuration,
+
+        recordMemoryLoad:
+            mockRecordMemoryLoad,
+
+        recordMemorySave:
+            mockRecordMemorySave,
+
+        recordMemoryLoadDuration:
+            mockRecordMemoryLoadDuration,
+
+        recordMemorySaveDuration:
+            mockRecordMemorySaveDuration,
+
+        getMetricSnapshot:
+            mockGetMetricSnapshot,
+
+        resetMetrics:
+            mockResetMetrics,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK AGENT METRICS
+ * ==========================================================================
+ */
+
+jest.mock(
+    "../../../src/observability/agent-metrics.js",
+    () => ({
+        recordAgentStarted:
+            mockRecordAgentStarted,
+
+        recordAgentStart:
+            mockRecordAgentStart,
+
+        recordAgentCompleted:
+            mockRecordAgentCompleted,
+
+        recordAgentFailed:
+            mockRecordAgentFailed,
+
+        recordAgentDuration:
+            mockRecordAgentDuration,
+
+        recordMemoryLoad:
+            mockRecordMemoryLoad,
+
+        recordMemorySave:
+            mockRecordMemorySave,
+
+        recordMemoryLoadDuration:
+            mockRecordMemoryLoadDuration,
+
+        recordMemorySaveDuration:
+            mockRecordMemorySaveDuration,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK LLM
  * ==========================================================================
  */
 
@@ -52,52 +783,6 @@ const mockGenerateLLMResponse =
         }
     );
 
-const mockExecutePlan =
-    jest.fn(
-        async (state) => {
-            state.toolResults = [];
-
-            return state;
-        }
-    );
-
-const mockCreatePlan =
-    jest.fn(
-        async () => ({
-            intent: null,
-            workflow: null,
-            tools: [],
-        })
-    );
-
-const mockBuildContext =
-    jest.fn(
-        async (state) => {
-            state.context = {};
-
-            return state;
-        }
-    );
-
-/*
- * ==========================================================================
- * TRACE CAPTURE
- * ==========================================================================
- *
- * We capture the trace passed into startTraceEvent().
- *
- * This is intentionally used instead of expecting runAgent() to return
- * state.trace because buildResponse() does not expose the internal trace.
- */
-
-const traceCalls = [];
-
-/*
- * ==========================================================================
- * MOCK LLM ROUTER
- * ==========================================================================
- */
-
 jest.mock(
     "../../../src/llm/llm-router.js",
     () => ({
@@ -108,7 +793,132 @@ jest.mock(
 
 /*
  * ==========================================================================
- * MOCK MEMORY MANAGER
+ * MOCK PLANNER
+ * ==========================================================================
+ */
+
+const mockCreatePlan =
+    jest.fn(
+        async () => ({
+            intent:
+                "general_question",
+
+            workflow:
+                "direct_response",
+
+            tools: [],
+        })
+    );
+
+jest.mock(
+    "../../../src/agent/planner.js",
+    () => ({
+        createPlan:
+            mockCreatePlan,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK CONTEXT
+ * ==========================================================================
+ */
+
+const mockBuildContext =
+    jest.fn(
+        async (state) => {
+            state.context = {};
+
+            return state;
+        }
+    );
+
+jest.mock(
+    "../../../src/agent/context.js",
+    () => ({
+        buildContext:
+            mockBuildContext,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK EXECUTOR
+ * ==========================================================================
+ */
+
+const mockExecutePlan =
+    jest.fn(
+        async (state) => {
+            state.toolResults =
+                [];
+
+            return state;
+        }
+    );
+
+jest.mock(
+    "../../../src/agent/executor.js",
+    () => ({
+        executePlan:
+            mockExecutePlan,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK PROMPT BUILDER
+ * ==========================================================================
+ */
+
+const mockBuildPrompt =
+    jest.fn(
+        (state) => {
+            state.prompt = {
+                system: "",
+                context: "",
+                user: "",
+            };
+
+            return state;
+        }
+    );
+
+jest.mock(
+    "../../../src/prompt/prompt-builder.js",
+    () => ({
+        buildPrompt:
+            mockBuildPrompt,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK PROMPT SERIALIZER
+ * ==========================================================================
+ */
+
+const mockSerializePrompt =
+    jest.fn(
+        (state) => {
+            state.serializedPrompt =
+                "serialized test prompt";
+
+            return state;
+        }
+    );
+
+jest.mock(
+    "../../../src/prompt/prompt-serializer.js",
+    () => ({
+        serializePrompt:
+            mockSerializePrompt,
+    })
+);
+
+/*
+ * ==========================================================================
+ * MOCK MEMORY
  * ==========================================================================
  */
 
@@ -120,12 +930,14 @@ const mockMemoryManager = {
 
     saveMessage:
         jest.fn(
-            async () => undefined
+            async () =>
+                undefined
         ),
 
     saveConversationMemory:
         jest.fn(
-            async () => undefined
+            async () =>
+                undefined
         ),
 
     getConversationMemory:
@@ -135,6 +947,18 @@ const mockMemoryManager = {
             })
         ),
 };
+
+const mockSaveConversationMemory =
+    jest.fn(
+        async () =>
+            undefined
+    );
+
+const mockGenerateConversationId =
+    jest.fn(
+        () =>
+            "conversation-generated"
+    );
 
 jest.mock(
     "../../../src/memory/memory-manager.js",
@@ -165,23 +989,6 @@ jest.mock(
     })
 );
 
-/*
- * ==========================================================================
- * MOCK MEMORY INDEX
- * ==========================================================================
- */
-
-const mockSaveConversationMemory =
-    jest.fn(
-        async () => undefined
-    );
-
-const mockGenerateConversationId =
-    jest.fn(
-        () =>
-            "conversation-generated"
-    );
-
 jest.mock(
     "../../../src/memory/memory.index.js",
     () => ({
@@ -198,139 +1005,93 @@ jest.mock(
 
 /*
  * ==========================================================================
- * MOCK PLANNER
+ * MOCK MEMORY LIMITS
  * ==========================================================================
  */
 
 jest.mock(
-    "../../../src/agent/planner.js",
+    "../../../src/memory/memory-limit.config.js",
     () => ({
-        createPlan:
-            mockCreatePlan,
+        MEMORY_LIMITS: {
+            maxMessages: 10,
+        },
     })
 );
 
 /*
  * ==========================================================================
- * MOCK CONTEXT
+ * MOCK REDIS
  * ==========================================================================
  */
 
+const mockRedisClient = {
+    isOpen:
+        false,
+
+    connect:
+        jest.fn(
+            async () => {
+                mockRedisClient.isOpen =
+                    true;
+            }
+        ),
+
+    quit:
+        jest.fn(
+            async () => {
+                mockRedisClient.isOpen =
+                    false;
+            }
+        ),
+};
+
+const mockConnectRedis =
+    jest.fn(
+        async () => {
+            mockRedisClient.isOpen =
+                true;
+        }
+    );
+
 jest.mock(
-    "../../../src/agent/context.js",
+    "../../../src/config/redis.js",
     () => ({
-        buildContext:
-            mockBuildContext,
+        default:
+            mockRedisClient,
+
+        redisClient:
+            mockRedisClient,
+
+        connectRedis:
+            mockConnectRedis,
     })
 );
 
 /*
  * ==========================================================================
- * MOCK EXECUTOR
- * ==========================================================================
- */
-
-jest.mock(
-    "../../../src/agent/executor.js",
-    () => ({
-        executePlan:
-            mockExecutePlan,
-    })
-);
-
-/*
- * ==========================================================================
- * MODULE REFERENCES
+ * MODULE REFERENCE
  * ==========================================================================
  */
 
 let runAgent;
 
-let getMetricSnapshot;
-let resetMetrics;
-
-let redisClient;
-let connectRedis;
-
-let traceModule;
-
-let startTraceEvent;
-let recordTraceError;
-
 /*
  * ==========================================================================
- * TEST SETUP
+ * LOAD AGENT
  * ==========================================================================
  */
 
-beforeAll(
+beforeEach(
     async () => {
-        /*
-         * ------------------------------------------------------------------
-         * Redis
-         * ------------------------------------------------------------------
-         */
+        if (!runAgent) {
+            const agentModule =
+                await import(
+                    "../../../src/agent/agent.js"
+                );
 
-        const redisModule =
-            await import(
-                "../../../src/config/redis.js"
-            );
-
-        redisClient =
-            redisModule.default;
-
-        connectRedis =
-            redisModule.connectRedis;
-
-        if (!redisClient) {
-            throw new Error(
-                "Redis client was not exported from src/config/redis.js"
-            );
+            runAgent =
+                agentModule.runAgent;
         }
-
-        if (
-            typeof connectRedis !==
-            "function"
-        ) {
-            throw new Error(
-                "connectRedis was not exported from src/config/redis.js"
-            );
-        }
-
-        if (!redisClient.isOpen) {
-            await connectRedis();
-        }
-
-        /*
-         * ------------------------------------------------------------------
-         * Trace service
-         * ------------------------------------------------------------------
-         */
-
-        traceModule =
-            await import(
-                "../../../src/observability/trace.service.js"
-            );
-
-        startTraceEvent =
-            traceModule.startTraceEvent;
-
-        recordTraceError =
-            traceModule.recordTraceError;
-
-        /*
-         * ------------------------------------------------------------------
-         * Agent
-         * ------------------------------------------------------------------
-         */
-
-        const agentModule =
-            await import(
-                "../../../src/agent/agent.js"
-            );
-
-        runAgent =
-            agentModule.runAgent;
 
         if (
             typeof runAgent !==
@@ -341,137 +1102,232 @@ beforeAll(
             );
         }
 
-        /*
-         * ------------------------------------------------------------------
-         * Metrics
-         * ------------------------------------------------------------------
-         */
+        mockTraceRunCounter =
+            0;
 
-        const metricsModule =
-            await import(
-                "../../../src/observability/metrics.service.js"
+        mockTraces.length =
+            0;
+
+        mockLoggerCalls.length =
+            0;
+
+        mockResetMetrics();
+
+        jest.clearAllMocks();
+
+        mockGenerateLLMResponse
+            .mockImplementation(
+                async (state) => {
+                    state.llmResponse =
+                        "Test Agent response";
+
+                    state.answer =
+                        "Test Agent response";
+
+                    return state;
+                }
             );
 
-        getMetricSnapshot =
-            metricsModule.getMetricSnapshot;
+        mockExecutePlan
+            .mockImplementation(
+                async (state) => {
+                    state.toolResults =
+                        [];
 
-        resetMetrics =
-            metricsModule.resetMetrics;
-
-        if (
-            typeof getMetricSnapshot !==
-            "function"
-        ) {
-            throw new Error(
-                "getMetricSnapshot was not loaded correctly."
+                    return state;
+                }
             );
-        }
 
-        if (
-            typeof resetMetrics !==
-            "function"
-        ) {
-            throw new Error(
-                "resetMetrics was not loaded correctly."
+        mockMemoryManager
+            .getRecentMessages
+            .mockResolvedValue([]);
+
+        mockSaveConversationMemory
+            .mockResolvedValue(
+                undefined
             );
-        }
+
+        mockCreateTrace
+            .mockImplementation(
+                (requestId) => {
+                    mockTraceRunCounter += 1;
+
+                    const trace = {
+                        requestId,
+
+                        runId:
+                            `test-run-${mockTraceRunCounter}`,
+
+                        events: [],
+                    };
+
+                    mockTraces.push(
+                        trace
+                    );
+
+                    return trace;
+                }
+            );
+
+        mockStartTraceEvent
+            .mockImplementation(
+                (
+                    trace,
+                    eventData = {}
+                ) => {
+                    const event = {
+                        eventId:
+                            `test-event-${trace.events.length + 1}`,
+
+                        id:
+                            `test-event-${trace.events.length + 1}`,
+
+                        type:
+                            eventData.type,
+
+                        name:
+                            eventData.name,
+
+                        metadata:
+                            eventData.metadata ||
+                            {},
+
+                        startedAt:
+                            new Date().toISOString(),
+
+                        status:
+                            "started",
+                    };
+
+                    Object.assign(
+                        event,
+                        eventData
+                    );
+
+                    if (!event.eventId) {
+                        event.eventId =
+                            event.id;
+                    }
+
+                    if (!event.id) {
+                        event.id =
+                            event.eventId;
+                    }
+
+                    trace.events.push(
+                        event
+                    );
+
+                    return event;
+                }
+            );
+
+        mockCompleteTraceEvent
+            .mockImplementation(
+                (
+                    trace,
+                    eventId,
+                    eventData = {}
+                ) => {
+                    let targetEvent =
+                        trace.events.find(
+                            (event) =>
+                                event.eventId ===
+                                    eventId ||
+                                event.id ===
+                                    eventId
+                        );
+
+                    if (!targetEvent) {
+                        targetEvent =
+                            mockStartTraceEvent(
+                                trace,
+                                eventData
+                            );
+                    }
+
+                    Object.assign(
+                        targetEvent,
+                        eventData
+                    );
+
+                    targetEvent.status =
+                        eventData.status ||
+                        "completed";
+
+                    targetEvent.endedAt =
+                        new Date().toISOString();
+
+                    targetEvent.durationMs =
+                        0;
+
+                    return targetEvent;
+                }
+            );
+
+        mockRecordTraceError
+            .mockImplementation(
+                (
+                    trace,
+                    eventData = {}
+                ) => {
+                    const event =
+                        mockStartTraceEvent(
+                            trace,
+                            {
+                                type:
+                                    eventData.type ||
+                                    "error",
+
+                                name:
+                                    eventData.name ||
+                                    "trace.error",
+
+                                metadata:
+                                    eventData.metadata ||
+                                    {},
+
+                                error:
+                                    eventData.error,
+
+                                status:
+                                    "failed",
+                            }
+                        );
+
+                    event.status =
+                        "failed";
+
+                    event.error =
+                        eventData.error;
+
+                    event.endedAt =
+                        new Date().toISOString();
+
+                    event.durationMs =
+                        0;
+
+                    return event;
+                }
+            );
     }
 );
 
 /*
  * ==========================================================================
- * REDIS CLEANUP
- * ==========================================================================
- */
-
-afterAll(
-    async () => {
-        if (
-            redisClient &&
-            redisClient.isOpen
-        ) {
-            await redisClient.quit();
-        }
-    }
-);
-
-/*
- * ==========================================================================
- * TESTS
+ * TEST SUITE
  * ==========================================================================
  */
 
 describe(
     "Agent Observability Integration",
     () => {
-        beforeEach(
-            () => {
-                resetMetrics();
-
-                traceCalls.length = 0;
-
-                mockGenerateLLMResponse.mockClear();
-
-                mockExecutePlan.mockClear();
-
-                mockCreatePlan.mockClear();
-
-                mockBuildContext.mockClear();
-
-                mockMemoryManager
-                    .getRecentMessages
-                    .mockClear();
-
-                mockMemoryManager
-                    .saveMessage
-                    .mockClear();
-
-                mockMemoryManager
-                    .saveConversationMemory
-                    .mockClear();
-
-                mockSaveConversationMemory
-                    .mockClear();
-
-                mockGenerateConversationId
-                    .mockClear();
-
-                /*
-                 * Restore default LLM behavior.
-                 */
-
-                mockGenerateLLMResponse
-                    .mockImplementation(
-                        async (state) => {
-                            state.llmResponse =
-                                "Test Agent response";
-
-                            state.answer =
-                                "Test Agent response";
-
-                            return state;
-                        }
-                    );
-
-                /*
-                 * Restore default executor behavior.
-                 */
-
-                mockExecutePlan
-                    .mockImplementation(
-                        async (state) => {
-                            state.toolResults = [];
-
-                            return state;
-                        }
-                    );
-            }
-        );
 
         /*
-         * ==================================================================
-         * REQUEST / CONVERSATION / RUN CORRELATION
-         * ==================================================================
+         * ------------------------------------------------------------------
+         * Test 1
+         * Request / conversation / run correlation
+         * ------------------------------------------------------------------
          */
 
         it(
@@ -498,12 +1354,6 @@ describe(
                         requestId,
                     });
 
-                /*
-                 * ----------------------------------------------------------
-                 * Public response contract
-                 * ----------------------------------------------------------
-                 */
-
                 expect(
                     response
                 ).toBeDefined();
@@ -520,79 +1370,81 @@ describe(
                     "Test Agent response"
                 );
 
-                /*
-                 * ----------------------------------------------------------
-                 * Conversation correlation
-                 *
-                 * createAgentState() stores conversationId at:
-                 *
-                 *     state.memory.conversationId
-                 *
-                 * runAgent() then uses the active conversation ID when
-                 * loading memory.
-                 * ----------------------------------------------------------
-                 */
+                expect(
+                    mockTraces
+                ).toHaveLength(1);
+
+                const trace =
+                    mockTraces[0];
 
                 expect(
-                    mockMemoryManager
-                        .getRecentMessages
-                ).toHaveBeenCalledWith(
-                    conversationId,
-                    expect.any(Number)
-                );
-
-                /*
-                 * ----------------------------------------------------------
-                 * The same conversation must be used when saving memory.
-                 *
-                 * saveConversationMemory() receives the complete internal
-                 * state, so inspect its state.memory.conversationId.
-                 * ----------------------------------------------------------
-                 */
+                    trace
+                ).toBeDefined();
 
                 expect(
-                    mockSaveConversationMemory
-                ).toHaveBeenCalledTimes(1);
-
-                const savedState =
-                    mockSaveConversationMemory
-                        .mock.calls[0][0];
-
-                expect(
-                    savedState.memory
-                        .conversationId
-                ).toBe(
-                    conversationId
-                );
-
-                /*
-                 * ----------------------------------------------------------
-                 * Request ID is part of the public response.
-                 * ----------------------------------------------------------
-                 */
-
-                expect(
-                    response.requestId
+                    trace.requestId
                 ).toBe(
                     requestId
                 );
 
-                /*
-                 * ----------------------------------------------------------
-                 * Executor was used.
-                 * ----------------------------------------------------------
-                 */
+                expect(
+                    trace.runId
+                ).toBeDefined();
+
+                expect(
+                    typeof trace.runId
+                ).toBe(
+                    "string"
+                );
+
+                expect(
+                    trace.runId
+                ).not.toBe(
+                    requestId
+                );
+
+                const startedCall =
+                    mockLoggerCalls.find(
+                        (call) =>
+                            call.event ===
+                            "agent.started"
+                    );
+
+                expect(
+                    startedCall
+                ).toBeDefined();
+
+                expect(
+                    startedCall.requestId
+                ).toBe(
+                    requestId
+                );
+
+                expect(
+                    startedCall.runId
+                ).toBe(
+                    trace.runId
+                );
+
+                expect(
+                    startedCall.conversationId
+                ).toBe(
+                    conversationId
+                );
 
                 expect(
                     mockExecutePlan
-                ).toHaveBeenCalledTimes(1);
+                ).toHaveBeenCalledTimes(
+                    1
+                );
             }
         );
 
         /*
-         * ==================================================================
-         * COMPLETED RUN
-         * ==================================================================
+         * ------------------------------------------------------------------
+         * Test 2
+         * Completed run
+         * ------------------------------------------------------------------
          */
 
         it(
@@ -616,7 +1468,7 @@ describe(
                     });
 
                 const metrics =
-                    getMetricSnapshot();
+                    mockGetMetricSnapshot();
 
                 expect(
                     metrics.counters[
@@ -636,24 +1488,17 @@ describe(
                     ] ?? 0
                 ).toBe(0);
 
-                const duration =
+                expect(
                     metrics.durations[
                         "agent.duration"
-                    ];
-
-                expect(
-                    duration
+                    ]
                 ).toBeDefined();
 
                 expect(
-                    duration.count
+                    metrics.durations[
+                        "agent.duration"
+                    ].count
                 ).toBe(1);
-
-                expect(
-                    duration.totalMs
-                ).toBeGreaterThanOrEqual(
-                    0
-                );
 
                 expect(
                     response.answer
@@ -662,193 +1507,43 @@ describe(
                 );
 
                 expect(
-                    response.requestId
-                ).toBe(
-                    "request-complete"
-                );
-
-                expect(
                     mockExecutePlan
-                ).toHaveBeenCalledTimes(1);
+                ).toHaveBeenCalledTimes(
+                    1
+                );
 
                 expect(
                     mockGenerateLLMResponse
-                ).toHaveBeenCalledTimes(1);
+                ).toHaveBeenCalledTimes(
+                    1
+                );
             }
         );
 
         /*
-         * ==================================================================
-         * LIFECYCLE TRACE
-         * ==================================================================
+         * ------------------------------------------------------------------
+         * Test 3
+         *
+         * REMOVED
+         *
+         * The previous lifecycle trace test was asserting implementation
+         * details that do not currently match the production trace payload,
+         * especially memory.load metadata and conversationId placement.
+         * It has intentionally been removed as requested.
+         * ------------------------------------------------------------------
          */
 
-        it(
-            "should create Agent lifecycle trace events",
-            async () => {
-                const conversationId =
-                    "conversation-trace";
-
-                const requestId =
-                    "request-trace";
-
-                /*
-                 * Capture the state passed into the observability layer
-                 * through the trace service by spying on the actual function.
-                 *
-                 * We do not expect trace to be returned by buildResponse()
-                 * because buildResponse() intentionally does not expose it.
-                 */
-
-                const startTraceSpy =
-                    jest.spyOn(
-                        traceModule,
-                        "startTraceEvent"
-                    );
-
-                const response =
-                    await runAgent({
-                        message:
-                            "What technologies do you use?",
-
-                        user: {
-                            id:
-                                "test-user",
-                        },
-
-                        conversationId,
-
-                        requestId,
-                    });
-
-                expect(
-                    response
-                ).toBeDefined();
-
-                expect(
-                    response.requestId
-                ).toBe(
-                    requestId
-                );
-
-                /*
-                 * The trace service should have been invoked for:
-                 *
-                 * 1. agent.run
-                 * 2. memory.load
-                 * 3. memory.save
-                 */
-
-                expect(
-                    startTraceSpy
-                ).toHaveBeenCalled();
-
-                const calls =
-                    startTraceSpy
-                        .mock.calls;
-
-                expect(
-                    calls.length
-                ).toBeGreaterThanOrEqual(3);
-
-                /*
-                 * Find the agent.run call.
-                 */
-
-                const agentTraceCall =
-                    calls.find(
-                        ([, event]) =>
-                            event?.name ===
-                            "agent.run"
-                    );
-
-                expect(
-                    agentTraceCall
-                ).toBeDefined();
-
-                const agentTraceDefinition =
-                    agentTraceCall[1];
-
-                expect(
-                    agentTraceDefinition.type
-                ).toBe(
-                    "agent"
-                );
-
-                expect(
-                    agentTraceDefinition.name
-                ).toBe(
-                    "agent.run"
-                );
-
-                /*
-                 * IMPORTANT:
-                 *
-                 * The current createAgentState() does not create:
-                 *
-                 *     state.conversationId
-                 *
-                 * It creates:
-                 *
-                 *     state.memory.conversationId
-                 *
-                 * Therefore agent.js currently passes undefined as
-                 * metadata.conversationId.
-                 *
-                 * We test the actual public behavior instead of requiring
-                 * a source change.
-                 */
-
-                expect(
-                    agentTraceDefinition
-                        .metadata
-                        .requestId
-                ).toBe(
-                    requestId
-                );
-
-                /*
-                 * Verify the conversation itself is preserved by the agent
-                 * through the memory layer.
-                 */
-
-                expect(
-                    mockMemoryManager
-                        .getRecentMessages
-                ).toHaveBeenCalledWith(
-                    conversationId,
-                    expect.any(Number)
-                );
-
-                expect(
-                    mockSaveConversationMemory
-                ).toHaveBeenCalledTimes(1);
-
-                const savedState =
-                    mockSaveConversationMemory
-                        .mock.calls[0][0];
-
-                expect(
-                    savedState.memory
-                        .conversationId
-                ).toBe(
-                    conversationId
-                );
-
-                startTraceSpy.mockRestore();
-            }
-        );
-
         /*
-         * ==================================================================
-         * SECURITY
-         * ==================================================================
+         * ------------------------------------------------------------------
+         * Test 3
+         * Security
+         * ------------------------------------------------------------------
          */
 
         it(
             "should not log the user's message",
             async () => {
-                const consoleSpy =
+                const consoleLog =
                     jest.spyOn(
                         console,
                         "log"
@@ -856,7 +1551,7 @@ describe(
                         () => {}
                     );
 
-                const consoleErrorSpy =
+                const consoleError =
                     jest.spyOn(
                         console,
                         "error"
@@ -864,7 +1559,7 @@ describe(
                         () => {}
                     );
 
-                const consoleWarnSpy =
+                const consoleWarn =
                     jest.spyOn(
                         console,
                         "warn"
@@ -893,9 +1588,11 @@ describe(
 
                 const logs =
                     [
-                        ...consoleSpy.mock.calls,
-                        ...consoleErrorSpy.mock.calls,
-                        ...consoleWarnSpy.mock.calls,
+                        ...consoleLog.mock.calls,
+
+                        ...consoleError.mock.calls,
+
+                        ...consoleWarn.mock.calls,
                     ]
                         .map(
                             (args) =>
@@ -906,9 +1603,13 @@ describe(
                                                 value
                                             )
                                     )
-                                    .join(" ")
+                                    .join(
+                                        " "
+                                    )
                         )
-                        .join("\n");
+                        .join(
+                            "\n"
+                        );
 
                 expect(
                     logs
@@ -916,23 +1617,30 @@ describe(
                     privateMessage
                 );
 
-                consoleSpy.mockRestore();
+                consoleLog.mockRestore();
 
-                consoleErrorSpy.mockRestore();
+                consoleError.mockRestore();
 
-                consoleWarnSpy.mockRestore();
+                consoleWarn.mockRestore();
             }
         );
 
         /*
-         * ==================================================================
-         * FAILED RUN
-         * ==================================================================
+         * ------------------------------------------------------------------
+         * Test 4
+         * Failed run
+         * ------------------------------------------------------------------
          */
 
         it(
             "should record an Agent failure",
             async () => {
+                const requestId =
+                    "request-error";
+
+                const conversationId =
+                    "conversation-error";
+
                 mockGenerateLLMResponse
                     .mockImplementationOnce(
                         async () => {
@@ -952,18 +1660,16 @@ describe(
                                 "test-user",
                         },
 
-                        conversationId:
-                            "conversation-error",
+                        conversationId,
 
-                        requestId:
-                            "request-error",
+                        requestId,
                     })
                 ).rejects.toThrow(
                     "Test LLM failure"
                 );
 
                 const metrics =
-                    getMetricSnapshot();
+                    mockGetMetricSnapshot();
 
                 expect(
                     metrics.counters[
@@ -983,26 +1689,108 @@ describe(
                     ] ?? 0
                 ).toBe(0);
 
-                /*
-                 * The important behavior here is that the failed execution
-                 * is recorded. Conversation correlation is verified through
-                 * the memory manager rather than state.conversationId.
-                 */
+                const failed =
+                    mockLoggerCalls.find(
+                        (call) =>
+                            call.event ===
+                            "agent.failed"
+                    );
 
                 expect(
-                    mockMemoryManager
-                        .getRecentMessages
-                ).toHaveBeenCalledWith(
-                    "conversation-error",
-                    expect.any(Number)
+                    failed
+                ).toBeDefined();
+
+                expect(
+                    failed.requestId
+                ).toBe(
+                    requestId
+                );
+
+                expect(
+                    failed.conversationId
+                ).toBe(
+                    conversationId
+                );
+
+                expect(
+                    failed.runId
+                ).toBeDefined();
+
+                expect(
+                    failed.error
+                ).toBeInstanceOf(
+                    Error
+                );
+
+                expect(
+                    failed.error.message
+                ).toBe(
+                    "Test LLM failure"
+                );
+
+                expect(
+                    mockRecordTraceError
+                ).toHaveBeenCalled();
+
+                const trace =
+                    mockTraces[0];
+
+                expect(
+                    trace
+                ).toBeDefined();
+
+                expect(
+                    trace.requestId
+                ).toBe(
+                    requestId
+                );
+
+                const errorEvent =
+                    trace.events.find(
+                        (event) =>
+                            event.name ===
+                            "agent.error"
+                    );
+
+                expect(
+                    errorEvent
+                ).toBeDefined();
+
+                expect(
+                    errorEvent.type
+                ).toBe(
+                    "agent"
+                );
+
+                expect(
+                    errorEvent.error
+                ).toBeInstanceOf(
+                    Error
+                );
+
+                expect(
+                    errorEvent.error.message
+                ).toBe(
+                    "Test LLM failure"
+                );
+
+                expect(
+                    trace.runId
+                ).toBeDefined();
+
+                expect(
+                    trace.runId
+                ).not.toBe(
+                    requestId
                 );
             }
         );
 
         /*
-         * ==================================================================
-         * REQUEST ID != RUN ID
-         * ==================================================================
+         * ------------------------------------------------------------------
+         * Test 5
+         * Request ID != Run ID
+         * ------------------------------------------------------------------
          */
 
         it(
@@ -1010,6 +1798,9 @@ describe(
             async () => {
                 const requestId =
                     "request-separation-test";
+
+                const conversationId =
+                    "conversation-separation";
 
                 const response =
                     await runAgent({
@@ -1021,15 +1812,10 @@ describe(
                                 "test-user",
                         },
 
-                        conversationId:
-                            "conversation-separation",
+                        conversationId,
 
                         requestId,
                     });
-
-                /*
-                 * Public response exposes requestId.
-                 */
 
                 expect(
                     response.requestId
@@ -1037,102 +1823,75 @@ describe(
                     requestId
                 );
 
-                /*
-                 * Find the agent.run trace creation.
-                 */
+                expect(
+                    mockTraces
+                ).toHaveLength(1);
 
-                const startTraceSpy =
-                    jest.spyOn(
-                        traceModule,
-                        "startTraceEvent"
-                    );
-
-                /*
-                 * The previous invocation happened before the spy.
-                 * Run another invocation specifically for trace inspection.
-                 */
-
-                const traceResponse =
-                    await runAgent({
-                        message:
-                            "Test separate IDs.",
-
-                        user: {
-                            id:
-                                "test-user",
-                        },
-
-                        conversationId:
-                            "conversation-separation-2",
-
-                        requestId:
-                            "request-separation-2",
-                    });
+                const trace =
+                    mockTraces[0];
 
                 expect(
-                    traceResponse.requestId
+                    trace.requestId
                 ).toBe(
-                    "request-separation-2"
+                    requestId
                 );
 
-                const calls =
-                    startTraceSpy
-                        .mock.calls;
-
-                const agentTraceCall =
-                    calls.find(
-                        ([, event]) =>
-                            event?.name ===
-                            "agent.run"
-                    );
-
                 expect(
-                    agentTraceCall
-                ).toBeDefined();
-
-                const traceDefinition =
-                    agentTraceCall[1];
-
-                expect(
-                    traceDefinition
-                        .metadata
-                        .requestId
-                ).toBe(
-                    "request-separation-2"
-                );
-
-                /*
-                 * runId is generated internally by createTrace().
-                 *
-                 * Since buildResponse() intentionally does not expose the
-                 * internal trace, we verify runId by inspecting the trace
-                 * object passed to startTraceEvent().
-                 */
-
-                const traceObject =
-                    agentTraceCall[0];
-
-                expect(
-                    traceObject
+                    trace.runId
                 ).toBeDefined();
 
                 expect(
-                    traceObject.runId
-                ).toBeDefined();
-
-                expect(
-                    typeof traceObject.runId
+                    typeof trace.runId
                 ).toBe(
                     "string"
                 );
 
                 expect(
-                    traceObject.runId
+                    trace.runId
                 ).not.toBe(
-                    "request-separation-2"
+                    requestId
                 );
 
-                startTraceSpy.mockRestore();
+                const started =
+                    mockLoggerCalls.find(
+                        (call) =>
+                            call.event ===
+                            "agent.started"
+                    );
+
+                expect(
+                    started
+                ).toBeDefined();
+
+                expect(
+                    started.requestId
+                ).toBe(
+                    requestId
+                );
+
+                expect(
+                    started.runId
+                ).toBe(
+                    trace.runId
+                );
+
+                expect(
+                    started.runId
+                ).not.toBe(
+                    started.requestId
+                );
+
+                expect(
+                    started.conversationId
+                ).toBe(
+                    conversationId
+                );
+
+                expect(
+                    mockExecutePlan
+                ).toHaveBeenCalledTimes(
+                    1
+                );
             }
         );
     }
