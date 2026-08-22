@@ -49,7 +49,7 @@ AUTH_ROUTER.post(
   validationMiddleware(createUserValidator),
   async (req, res, next) => {
     try {
-      const { user} = await register(req.body);
+       await register(req.body);
 
      
 
